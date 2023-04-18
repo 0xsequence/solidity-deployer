@@ -1,0 +1,11 @@
+# Ignore node_modules directory
+node_modules/
+
+# Ignore compiled JavaScript files
+/dist
+
+# Ignore TypeScript build artifacts
+*.tsbuildinfo
+
+# Ignore .DS_Store files on macOS
+.DS_Store

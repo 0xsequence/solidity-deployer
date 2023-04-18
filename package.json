@@ -1,0 +1,33 @@
+{
+  "name": "solidity-deployer",
+  "version": "1.0.0",
+  "description": "A workflow for deploying solidity contract",
+  "keywords": [
+    "solidity",
+    "smart-contracts",
+    "blockchain",
+    "ethereum",
+    "deploy"
+  ],
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "repository": "https://github.com/Ao-Collaboration/solidity-deployer.git",
+  "bugs": {
+    "url": "https://github.com/Ao-Collaboration/solidity-deployer/issues"
+  },
+  "homepage": "https://github.com/Ao-Collaboration/solidity-deployer#README.md",
+  "author": "Michael Standen",
+  "license": "UNLICENSED",
+  "private": false,
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "publish": "yarn build && npm publish"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.4"
+  }
+}
