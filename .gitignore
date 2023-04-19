@@ -9,3 +9,6 @@ node_modules/
 
 # Ignore .DS_Store files on macOS
 .DS_Store
+
+# Yarn
+yarn-error.log
