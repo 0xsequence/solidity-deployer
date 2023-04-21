@@ -1,12 +1,20 @@
+import { JsonRpcProvider } from '@ethersproject/providers'
 import axios from 'axios'
 import { config as dotenvConfig } from 'dotenv'
+import { ContractFactory, Wallet } from 'ethers'
 import {
   EtherscanVerificationRequest,
   EtherscanVerifier,
 } from '../../src/verifiers/EtherscanVerifier'
-import { COUNTER_ADDR_SEPOLIA, COUNTER_SOURCE } from '../utils/constants'
+import {
+  COUNTER_ADDR_SEPOLIA,
+  COUNTER_COMPILER_INPUT,
+} from '../utils/counter'
+import solc from 'solc';
 
 dotenvConfig()
+
+const solcSnapshot = solc.setupMethods(require('../solc/soljson-v0.8.18+commit.87f61d96'))
 
 describe('EtherscanVerifier', () => {
   let etherscanVerifier: EtherscanVerifier
@@ -27,11 +35,9 @@ describe('EtherscanVerifier', () => {
       axiosPostStub = jest
         .spyOn(axios, 'post')
         .mockResolvedValue({ data: { status: '1', result: 'Verified' } })
-      axiosGetStub = jest
-        .spyOn(axios, 'get')
-        .mockResolvedValue({
-          data: { status: '1', result: 'Passed verification' },
-        })
+      axiosGetStub = jest.spyOn(axios, 'get').mockResolvedValue({
+        data: { status: '1', result: 'Passed verification' },
+      })
     } else {
       // Do it for real. Requires manual review on Etherscan
       console.log('Sepolia env vars found, using real API for tests')
@@ -50,35 +56,8 @@ describe('EtherscanVerifier', () => {
   it('verifies etherscan source', async () => {
     const request: EtherscanVerificationRequest = {
       contractToVerify: 'contracts/Counter.sol:CounterWithLogs',
-      version: 'v0.8.18+commit.87f61d96',
-      compilerInput: {
-        language: 'Solidity',
-        sources: {
-          'contracts/Counter.sol': {
-            content: COUNTER_SOURCE,
-          },
-        },
-        settings: {
-          optimizer: {
-            enabled: false,
-            runs: 200,
-          },
-          outputSelection: {
-            '*': {
-              '*': [
-                'abi',
-                'evm.bytecode',
-                'evm.deployedBytecode',
-                'evm.methodIdentifiers',
-                'metadata',
-              ],
-              '': ['ast'],
-            },
-          },
-          libraries: {},
-          remappings: [],
-        },
-      },
+      version: `v${solcSnapshot.version().replace('.Emscripten.clang', '')}`,
+      compilerInput: COUNTER_COMPILER_INPUT,
       waitForSuccess: true,
     }
 
@@ -89,18 +68,25 @@ describe('EtherscanVerifier', () => {
       SEPOLIA_RPC_URL !== undefined &&
       ETHERSCAN_API_KEY !== undefined
     ) {
-      //FIXME Once deployer is added
-      // Deploy something new so we can verify it
-      // const provider = new JsonRpcProvider(SEPOLIA_RPC_URL)
-      // const wallet = new Wallet(SEPOLIA_PRIVATE_KEY, provider)
-      // const factory = new UniversalDeployer2__factory(wallet)
-      // const deployed = await factory.deploy()
-      // contractAddr = deployed.address
+      // Etherscan will automatically verify the contract if it's already deployed with the same settings
+      // So we randomise the number of runs. That'll work most of the time
+      request.compilerInput.settings.optimizer.runs = Math.floor(Math.random() * 10000)
+
+      // Create the factory from scratch
+      const compilerOutput = JSON.parse(solcSnapshot.compile(JSON.stringify(request.compilerInput)))
+      const contractOutput = compilerOutput.contracts['contracts/Counter.sol']['CounterWithLogs']
+
+      // // // Deploy something new so we can verify it
+      const provider = new JsonRpcProvider(SEPOLIA_RPC_URL)
+      const wallet = new Wallet(SEPOLIA_PRIVATE_KEY, provider)
+      const factory = new ContractFactory(contractOutput.abi, contractOutput.evm.bytecode, wallet)
+      const deployed = await factory.deploy()
+      contractAddr = deployed.address
       console.log(contractAddr)
 
       // Pause for Etherscan to index contract
       console.log('Waiting a bit so Etherscan can index contract')
-      await new Promise(resolve => setTimeout(resolve, 20000)) // Delay 20s (sometimes it needs longer...)
+      await new Promise(resolve => setTimeout(resolve, 60000)) // Delay 60s (sometimes it needs longer...)
     }
 
     await etherscanVerifier.verifyContract(contractAddr, request)
@@ -112,5 +98,5 @@ describe('EtherscanVerifier', () => {
       // With real API, this could be called multiple times
       expect(axiosGetStub).toHaveBeenCalledTimes(1)
     }
-  }, 30000) // Increase the timeout to 30 seconds
+  }, 120000) // Increase the timeout to 120 seconds
 })

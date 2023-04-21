@@ -1,37 +1,6 @@
 import axios from 'axios'
+import { CompilerInput } from 'solc'
 import type { Logger } from 'src/types/logger'
-
-export interface CompilerInput {
-  language: string // "Solidity" or "Yul"
-  sources: { [sourceName: string]: { content: string } }
-  settings: {
-    viaIR?: boolean
-    optimizer: {
-      runs?: number
-      enabled?: boolean
-      details?: {
-        // If viaIR then detail: {yulDetails: {optimizerSteps: "u"}}}
-        yul?: boolean
-        yulDetails?: {
-          optimizerSteps: string
-        }
-      }
-    }
-    metadata?: { useLiteralContent: boolean }
-    outputSelection: {
-      [sourceName: string]: {
-        [contractName: string]: string[]
-      }
-    }
-    evmVersion?: string
-    libraries?: {
-      [libraryFileName: string]: {
-        [libraryName: string]: string
-      }
-    }
-    remappings?: string[]
-  }
-}
 
 export type EtherscanVerificationRequest = {
   contractToVerify: string

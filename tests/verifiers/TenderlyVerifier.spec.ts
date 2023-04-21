@@ -1,7 +1,7 @@
 import { Network, Tenderly } from '@tenderly/sdk'
 import { config as dotenvConfig } from 'dotenv'
 import { TenderlyVerifier } from '../../src/verifiers/TenderlyVerifier'
-import { COUNTER_ADDR_SEPOLIA, COUNTER_SOURCE } from '../utils/constants'
+import { COUNTER_ADDR_SEPOLIA, COUNTER_SOURCE } from '../utils/counter'
 
 dotenvConfig()
 
