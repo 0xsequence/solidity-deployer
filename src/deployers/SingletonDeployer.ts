@@ -1,4 +1,6 @@
 import {
+  BigNumber,
+  BigNumberish,
   BytesLike,
   Contract,
   ContractFactory,
@@ -8,8 +10,9 @@ import {
 } from 'ethers'
 import type { Logger } from 'src/types/logger'
 import { SingletonFactoryContract } from '../contracts/SingletonFactory'
+import type { Deployer } from 'src/types/deployer'
 
-export class SingletonDeployer {
+export class SingletonDeployer implements Deployer {
   private readonly provider: providers.Provider
   singletonFactory: SingletonFactoryContract
 
@@ -30,9 +33,14 @@ export class SingletonDeployer {
   deploy = async <T extends ContractFactory>(
     name: string,
     contract: new (...args: [signer: Signer]) => T,
+    contractInstance: BigNumberish = 0,
     txParams: providers.TransactionRequest = {},
     ...args: Parameters<T['deploy']>
   ): Promise<Contract> => {
+    if (!BigNumber.from(contractInstance).isZero()) {
+      throw new Error('Singleton cannot deploy non-zero instances')
+    }
+
     this.logger?.log(`Deploying ${name}`)
     const c = new contract(this.signer)
     const { data } = c.getDeployTransaction(...args)
@@ -76,8 +84,13 @@ export class SingletonDeployer {
 
   addressOf = async <T extends ContractFactory>(
     contract: new (...args: [signer: Signer]) => T,
+    contractInstance: BigNumberish = 0,
     ...args: Parameters<T['deploy']>
   ): Promise<string> => {
+    if (!BigNumber.from(contractInstance).isZero()) {
+      throw new Error('Singleton cannot deploy non-zero instances')
+    }
+
     const c = new contract(this.signer)
     const { data } = c.getDeployTransaction(...args)
     if (!data) {

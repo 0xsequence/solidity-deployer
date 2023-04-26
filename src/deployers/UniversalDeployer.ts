@@ -9,8 +9,9 @@ import {
 } from 'ethers'
 import type { Logger } from 'src/types/logger'
 import { UniversalDeployer2Contract } from '../contracts/UniversalDeployer2'
+import { Deployer } from 'src/types/deployer'
 
-export class UniversalDeployer {
+export class UniversalDeployer implements Deployer {
   private readonly provider: providers.Provider
   universalFactory: UniversalDeployer2Contract
 
@@ -31,7 +32,7 @@ export class UniversalDeployer {
   deploy = async <T extends ContractFactory>(
     name: string,
     contract: new (...args: [signer: Signer]) => T,
-    instance: BigNumberish = 0,
+    contractInstance: BigNumberish = 0,
     txParams: providers.TransactionRequest = {},
     ...args: Parameters<T['deploy']>
   ): Promise<Contract> => {
@@ -44,7 +45,7 @@ export class UniversalDeployer {
     }
 
     // Check if contract already deployed
-    const address = await this.addressFromData(data, instance)
+    const address = await this.addressFromData(data, contractInstance)
     if ((await this.provider.getCode(address)).length > 2) {
       this.logger?.log(
         `Skipping ${name} because it has been deployed at ${address}`,
@@ -59,7 +60,7 @@ export class UniversalDeployer {
         .then(b => b.gasLimit.mul(4).div(10))
     }
     // Deploy it
-    const tx = await this.universalFactory.deploy(data, instance, txParams)
+    const tx = await this.universalFactory.deploy(data, contractInstance, txParams)
     await tx.wait()
 
     // Confirm deployment
