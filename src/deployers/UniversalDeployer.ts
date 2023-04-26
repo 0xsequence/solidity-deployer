@@ -1,4 +1,5 @@
 import {
+  BigNumberish,
   BytesLike,
   Contract,
   ContractFactory,
@@ -7,29 +8,30 @@ import {
   providers,
 } from 'ethers'
 import type { Logger } from 'src/types/logger'
-import { SingletonFactoryContract } from '../contracts/SingletonFactory'
+import { UniversalDeployer2Contract } from '../contracts/UniversalDeployer2'
 
-export class SingletonDeployer {
+export class UniversalDeployer {
   private readonly provider: providers.Provider
-  singletonFactory: SingletonFactoryContract
+  universalFactory: UniversalDeployer2Contract
 
   constructor(
     private readonly signer: Signer,
     private readonly logger?: Logger,
-    singletonFactory?: SingletonFactoryContract,
+    universalFactory?: UniversalDeployer2Contract,
   ) {
     if (!signer.provider) throw new Error('Signer must have a provider')
     this.provider = signer.provider
-    if (singletonFactory) {
-      this.singletonFactory = singletonFactory
+    if (universalFactory) {
+      this.universalFactory = universalFactory
     } else {
-      this.singletonFactory = new SingletonFactoryContract(this.signer)
+      this.universalFactory = new UniversalDeployer2Contract(this.signer)
     }
   }
 
   deploy = async <T extends ContractFactory>(
     name: string,
     contract: new (...args: [signer: Signer]) => T,
+    instance: BigNumberish = 0,
     txParams: providers.TransactionRequest = {},
     ...args: Parameters<T['deploy']>
   ): Promise<Contract> => {
@@ -42,7 +44,7 @@ export class SingletonDeployer {
     }
 
     // Check if contract already deployed
-    const address = await this.addressFromData(data)
+    const address = await this.addressFromData(data, instance)
     if ((await this.provider.getCode(address)).length > 2) {
       this.logger?.log(
         `Skipping ${name} because it has been deployed at ${address}`,
@@ -57,11 +59,7 @@ export class SingletonDeployer {
         .then(b => b.gasLimit.mul(4).div(10))
     }
     // Deploy it
-    const tx = await this.singletonFactory.deploy(
-      data,
-      ethers.constants.HashZero,
-      txParams,
-    )
+    const tx = await this.universalFactory.deploy(data, instance, txParams)
     await tx.wait()
 
     // Confirm deployment
@@ -76,6 +74,7 @@ export class SingletonDeployer {
 
   addressOf = async <T extends ContractFactory>(
     contract: new (...args: [signer: Signer]) => T,
+    contractInstance: BigNumberish = 0,
     ...args: Parameters<T['deploy']>
   ): Promise<string> => {
     const c = new contract(this.signer)
@@ -83,25 +82,26 @@ export class SingletonDeployer {
     if (!data) {
       throw new Error(`No data for ${contract.name}`)
     }
-    return this.addressFromData(data)
+    return this.addressFromData(data, contractInstance)
   }
 
-  addressFromData = async (data: BytesLike): Promise<string> => {
-    return ethers.utils.getAddress(
-      ethers.utils.hexDataSlice(
-        ethers.utils.keccak256(
-          ethers.utils.solidityPack(
-            ['bytes1', 'address', 'bytes32', 'bytes32'],
-            [
-              '0xff',
-              this.singletonFactory.address,
-              ethers.constants.HashZero,
-              ethers.utils.keccak256(data),
-            ],
-          ),
-        ),
-        12,
+  addressFromData = async (
+    data: BytesLike,
+    contractInstance: BigNumberish = 0,
+  ): Promise<string> => {
+    const codeHash = ethers.utils.keccak256(
+      ethers.utils.solidityPack(['bytes'], [data]),
+    )
+
+    const salt = ethers.utils.solidityPack(['uint256'], [contractInstance])
+
+    const hash = ethers.utils.keccak256(
+      ethers.utils.solidityPack(
+        ['bytes1', 'address', 'bytes32', 'bytes32'],
+        ['0xff', this.universalFactory.address, salt, codeHash],
       ),
     )
+
+    return ethers.utils.getAddress(ethers.utils.hexDataSlice(hash, 12))
   }
 }

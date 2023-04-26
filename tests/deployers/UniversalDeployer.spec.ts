@@ -1,14 +1,14 @@
 import { Block, JsonRpcProvider } from '@ethersproject/providers'
 import { config as dotenvConfig } from 'dotenv'
 import { BigNumber, Wallet } from 'ethers'
-import { SingletonFactoryContract } from '../../src/contracts/SingletonFactory'
-import { SingletonDeployer } from '../../src/deployers/SingletonDeployer'
+import { UniversalDeployer2Contract } from '../../src/contracts/UniversalDeployer2'
+import { UniversalDeployer } from '../../src/deployers/UniversalDeployer'
 import { CounterFactory } from '../utils/counter'
 
 dotenvConfig()
 
-describe('SingletonDeployer', () => {
-  let deployer: SingletonDeployer
+describe('UniversalDeployer', () => {
+  let deployer: UniversalDeployer
   let stubbed = false
   let deployStub: jest.SpyInstance
 
@@ -26,34 +26,38 @@ describe('SingletonDeployer', () => {
         )
       jest.spyOn(provider, 'getBlock').mockResolvedValue({ gasLimit: BigNumber.from(5) } as Block)
       const codeStub = jest.spyOn(provider, 'getCode')
-      codeStub.mockReturnValueOnce(Promise.resolve('0x')) // Before deploy
+      codeStub
+        .mockReturnValueOnce(Promise.resolve('0x')) // Before deploy
         .mockReturnValueOnce(Promise.resolve('0x123')) // After deploy
+
       const wallet = Wallet.createRandom().connect(provider)
 
-      // Stub singleton factory
-      class MockSingletonFactoryContract extends SingletonFactoryContract {
+      // Stub universal factory
+      class MockUniversalDeployer2Contract extends UniversalDeployer2Contract {
         deploy(...args: Array<any>) {
-          return super.deploy(...args);
+          return super.deploy(...args)
         }
       }
-      const singletonFactory = new MockSingletonFactoryContract(wallet)
-      deployStub = jest.spyOn(singletonFactory, 'deploy').mockResolvedValue({wait: jest.fn()})
+      const universalFactory = new MockUniversalDeployer2Contract(wallet)
+      deployStub = jest
+        .spyOn(universalFactory, 'deploy')
+        .mockResolvedValue({ wait: jest.fn() })
 
-      deployer = new SingletonDeployer(wallet, console, singletonFactory)
+      deployer = new UniversalDeployer(wallet, console, universalFactory)
     } else {
       console.log('Sepolia configuration found, using real API for tests')
       const provider = new JsonRpcProvider(SEPOLIA_RPC_URL)
       const wallet = new Wallet(SEPOLIA_PRIVATE_KEY, provider)
-      deployer = new SingletonDeployer(wallet)
+      deployer = new UniversalDeployer(wallet, console)
     }
-  })
+  }, 120000)
 
   afterEach(async () => {
     jest.restoreAllMocks()
   })
 
   it('deploys successfully', async () => {
-    // Note: As this is a singleton deployment, repeated deployments will not deploy the contract each time
+    // Note: As this is a universal deployment, repeated deployments will not deploy the contract each time
     await deployer.deploy('Counter', CounterFactory)
 
     // Check
