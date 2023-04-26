@@ -29,12 +29,12 @@ export class DeployerFlow {
     friendlyName: string,
     contract: new (...args: [signer: Signer]) => T,
     verificationRequest: ContractVerificationRequest,
+    deploymentArgs: Parameters<T['deploy']>[] = [],
     contractInstance: BigNumberish = 0,
-    fundsRecoveryAddr?: string,
     txParams: providers.TransactionRequest = {},
-    ...args: Parameters<T['deploy']>
+    fundsRecoveryAddr?: string,
   ): Promise<Contract> => {
-    const c = await this.deployer.deploy(friendlyName, contract, contractInstance, txParams, ...args)
+    const c = await this.deployer.deploy.apply(null, [friendlyName, contract, contractInstance, txParams, ...deploymentArgs])
     if (fundsRecoveryAddr) {
       await this.recoverFunds(fundsRecoveryAddr)
     }
