@@ -1,12 +1,28 @@
 import { Tenderly, TenderlyConfiguration } from '@tenderly/sdk'
-import { BigNumber, BigNumberish, Contract, ContractFactory, Signer, providers, utils } from 'ethers'
+import {
+  BigNumber,
+  BigNumberish,
+  Contract,
+  ContractFactory,
+  ContractTransaction,
+  Signer,
+  providers,
+  utils,
+} from 'ethers'
 import { Logger } from './types/logger'
 import { Deployer } from './types/deployer'
-import { ContractVerificationRequest, ContractVerifier } from './ContractVerifier'
+import {
+  ContractVerificationRequest,
+  ContractVerifier,
+} from './ContractVerifier'
 import { UniversalDeployer } from './deployers/UniversalDeployer'
+import { WalletFactoryContract } from './contracts/factories/WalletFactory'
 
-export class DeployerFlow {
-  private readonly deployer: Deployer
+const WALLET_CODE =
+  '0x603a600e3d39601a805130553df3363d3d373d3d3d363d30545af43d82803e903d91601857fd5bf3'
+
+export class DeploymentFlow {
+  readonly deployer: Deployer
   private readonly verifier: ContractVerifier
 
   constructor(
@@ -17,12 +33,83 @@ export class DeployerFlow {
     private readonly logger?: Logger,
     deployer?: Deployer,
   ) {
-    this.verifier = new ContractVerifier(tenderly, etherscanApiKey, signer, networkName, logger)
+    this.verifier = new ContractVerifier(
+      tenderly,
+      etherscanApiKey,
+      signer,
+      networkName,
+      logger,
+    )
     if (deployer) {
       this.deployer = deployer
     } else {
       this.deployer = new UniversalDeployer(signer)
     }
+  }
+
+  /**
+   * Deploys guard wallets.
+   * @param moduleAddr Deployed module address
+   * @param guards List of image hashs for each guard wallet
+   * @return List of deployed guard wallet addresses
+   */
+  deployGuards = async (
+    moduleAddr: string,
+    guards: string[],
+  ): Promise<string[]> => {
+    if (!this.signer.provider) throw new Error('Signer must have a provider')
+
+    // Deploy wallet factory
+    const walletFactory = await this.deployer.deploy(
+      'WalletFactory',
+      WalletFactoryContract,
+    )
+
+    const codeHash = utils.keccak256(
+      utils.solidityPack(
+        ['bytes', 'bytes32'],
+        [WALLET_CODE, utils.hexZeroPad(moduleAddr, 32)],
+      ),
+    )
+
+    const deployedAddrs = []
+    const txs: Promise<void>[] = []
+
+    for (const imageHash of guards) {
+      // Filter already deployed wallets
+      const deployHash = utils.keccak256(
+        utils.solidityPack(
+          ['bytes1', 'address', 'bytes32', 'bytes32'],
+          ['0xff', walletFactory.address, imageHash, codeHash],
+        ),
+      )
+      const guardAddr = utils.getAddress(utils.hexDataSlice(deployHash, 12))
+      deployedAddrs.push(guardAddr)
+      if ((await this.signer.provider!!.getCode(guardAddr)).length > 2) {
+        this.logger?.log(
+          `Skipping guard wallet ${guardAddr} (already deployed)`,
+        )
+        continue
+      }
+      this.logger?.log(
+        `Deploying guard wallet ${guardAddr} with hash ${imageHash}`,
+      )
+      // Deploy it
+      const tx: ContractTransaction = await walletFactory.deploy(moduleAddr, imageHash, { gasLimit: 800000 })
+      txs.push((async () => {
+        this.logger?.log(
+          `Waiting on ${guardAddr} with hash ${imageHash}`,
+        )
+        await tx.wait()
+        this.logger?.log(
+          `Deployed guard wallet ${guardAddr} with hash ${imageHash}`,
+        )
+      })())
+    }
+
+    await Promise.all(txs)
+
+    return deployedAddrs
   }
 
   deployAndVerify = async <T extends ContractFactory>(
@@ -34,7 +121,13 @@ export class DeployerFlow {
     txParams: providers.TransactionRequest = {},
     fundsRecoveryAddr?: string,
   ): Promise<Contract> => {
-    const c = await this.deployer.deploy.apply(null, [friendlyName, contract, contractInstance, txParams, ...deploymentArgs])
+    const c = await this.deployer.deploy.apply(null, [
+      friendlyName,
+      contract,
+      contractInstance,
+      txParams,
+      ...deploymentArgs,
+    ])
     if (fundsRecoveryAddr) {
       await this.recoverFunds(fundsRecoveryAddr)
     }
@@ -53,9 +146,11 @@ export class DeployerFlow {
     this.logger?.log(`Recovering signer funds to ${address}`)
     const signerAddress = await this.signer.getAddress()
     const signerBalance = await this.signer.getBalance(signerAddress)
-    
+
     const isEOA = (await provider.getCode(address)).length <= 2
-    const gasEstimate = isEOA ? 21000 : await this.signer.estimateGas({ to: address, value: signerBalance })
+    const gasEstimate = isEOA
+      ? 21000
+      : await this.signer.estimateGas({ to: address, value: signerBalance })
     const gasPrice = await provider.getGasPrice()
 
     const tx = await this.signer.sendTransaction({
@@ -72,5 +167,4 @@ export class DeployerFlow {
 
     return dust
   }
-
 }
