@@ -11,13 +11,12 @@
   ],
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
-  "repository": "https://github.com/Ao-Collaboration/solidity-deployer.git",
+  "repository": "https://github.com/0xsequence/solidity-deployer.git",
   "bugs": {
-    "url": "https://github.com/Ao-Collaboration/solidity-deployer/issues"
+    "url": "https://github.com/0xsequence/solidity-deployer/issues"
   },
-  "homepage": "https://github.com/Ao-Collaboration/solidity-deployer#README.md",
-  "author": "Michael Standen",
-  "license": "UNLICENSED",
+  "homepage": "https://github.com/0xsequence/solidity-deployer#README.md",
+  "license": "Apache-2.0",
   "private": false,
   "scripts": {
     "build": "tsc -p .",

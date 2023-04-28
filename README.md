@@ -110,3 +110,7 @@ main()
     process.exit(1);
   });
 ```
+
+## License
+
+This project is released under the [Apache License 2.0](LICENSE).
