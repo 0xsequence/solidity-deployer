@@ -3,7 +3,7 @@ import { config as dotenvConfig } from 'dotenv'
 import { Wallet } from 'ethers'
 import { DeploymentFlow } from '../src/DeploymentFlow'
 import { WalletFactoryContract } from '../src/contracts/factories/WalletFactory'
-import { SequenceContext } from './utils/sequence'
+import type { SequenceContext } from './utils/sequence'
 import { SequenceWallet } from './utils/wallet'
 
 dotenvConfig()

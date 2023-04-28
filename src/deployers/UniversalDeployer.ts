@@ -1,15 +1,15 @@
-import {
+import type {
   BigNumberish,
   BytesLike,
   Contract,
   ContractFactory,
   Signer,
-  ethers,
   providers,
 } from 'ethers'
+import { ethers } from 'ethers'
 import { UniversalDeployer2Contract } from '../contracts/UniversalDeployer2'
-import { Deployer } from 'src/types/deployer'
-import { Logger } from 'src/types/logger'
+import type { Deployer } from 'src/types/deployer'
+import type { Logger } from 'src/types/logger'
 
 export class UniversalDeployer implements Deployer {
   private readonly provider: providers.Provider
@@ -60,7 +60,11 @@ export class UniversalDeployer implements Deployer {
         .then(b => b.gasLimit.mul(4).div(10))
     }
     // Deploy it
-    const tx = await this.universalFactory.deploy(data, contractInstance, txParams)
+    const tx = await this.universalFactory.deploy(
+      data,
+      contractInstance,
+      txParams,
+    )
     await tx.wait()
 
     // Confirm deployment

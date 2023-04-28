@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { CompilerInput } from 'solc'
-import { Logger } from 'src/types/logger'
+import type { CompilerInput } from 'solc'
+import type { Logger } from 'src/types/logger'
 
 export type EtherscanVerificationRequest = {
   contractToVerify: string

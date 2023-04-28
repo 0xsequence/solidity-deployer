@@ -4,6 +4,7 @@ import { Wallet } from 'ethers'
 import { ContractVerifier } from '../src/ContractVerifier'
 import { COUNTER_BYTECODE, COUNTER_COMPILER_INPUT, CounterFactory } from './utils/counter'
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const solcSnapshot = solc.setupMethods(require('./solc/soljson-v0.8.18+commit.87f61d96'))
 
 describe('ContractVerifier', () => {

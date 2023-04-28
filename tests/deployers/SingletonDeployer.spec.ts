@@ -1,4 +1,5 @@
-import { Block, JsonRpcProvider } from '@ethersproject/providers'
+import type { Block} from '@ethersproject/providers';
+import { JsonRpcProvider } from '@ethersproject/providers'
 import { config as dotenvConfig } from 'dotenv'
 import { BigNumber, Wallet } from 'ethers'
 import { SingletonFactoryContract } from '../../src/contracts/SingletonFactory'
@@ -32,6 +33,7 @@ describe('SingletonDeployer', () => {
 
       // Stub singleton factory
       class MockSingletonFactoryContract extends SingletonFactoryContract {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         deploy(...args: Array<any>) {
           return super.deploy(...args);
         }

@@ -1,4 +1,10 @@
-import { BigNumberish, Contract, ContractFactory, Signer, providers } from "ethers"
+import type {
+  BigNumberish,
+  Contract,
+  ContractFactory,
+  Signer,
+  providers,
+} from 'ethers'
 
 export interface Deployer {
   deploy<T extends ContractFactory>(

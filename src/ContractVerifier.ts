@@ -1,13 +1,21 @@
-import { Tenderly, TenderlyConfiguration, VerificationRequest } from '@tenderly/sdk'
+import type {
+  Tenderly,
+  TenderlyConfiguration,
+  VerificationRequest,
+} from '@tenderly/sdk'
 import axios from 'axios'
-import { ContractFactory, Signer, ethers } from 'ethers'
-import { EtherscanVerificationRequest, EtherscanVerifier } from './verifiers/EtherscanVerifier'
+import type { ContractFactory, Signer, ethers } from 'ethers'
+import type { EtherscanVerificationRequest } from './verifiers/EtherscanVerifier'
+import { EtherscanVerifier } from './verifiers/EtherscanVerifier'
 import { TenderlyVerifier } from './verifiers/TenderlyVerifier'
-import { Logger } from './types/logger'
+import type { Logger } from './types/logger'
 
 type SolidityCompilerShortVersion = `v${number}.${number}.${number}`
-type SolidityCompilerLongVersion = `v${number}.${number}.${number}+commit.${string}`
-type SolidityCompilerVersion = SolidityCompilerShortVersion | SolidityCompilerLongVersion
+type SolidityCompilerLongVersion =
+  `v${number}.${number}.${number}+commit.${string}`
+type SolidityCompilerVersion =
+  | SolidityCompilerShortVersion
+  | SolidityCompilerLongVersion
 type Path = string
 type Web3Address = string
 
@@ -54,7 +62,7 @@ export class ContractVerifier {
 
   validateBytecode = <T extends ContractFactory>(
     contractFactory: new (signer: ethers.Signer) => T,
-    expectedBytecode: string
+    expectedBytecode: string,
   ): void => {
     // Validate contract bytecode
     const factory = new contractFactory(this.signer)
@@ -63,12 +71,18 @@ export class ContractVerifier {
     }
   }
 
-  verifyContract = async (address: string, verificationRequest: ContractVerificationRequest): Promise<void> => {
-    let shortVersion = verificationRequest.version as SolidityCompilerShortVersion
+  verifyContract = async (
+    address: string,
+    verificationRequest: ContractVerificationRequest,
+  ): Promise<void> => {
+    let shortVersion =
+      verificationRequest.version as SolidityCompilerShortVersion
     let longVersion = verificationRequest.version as SolidityCompilerLongVersion
     if (verificationRequest.version.includes('+')) {
       // Long version, get short
-      shortVersion = verificationRequest.version.split('+')[0] as SolidityCompilerShortVersion
+      shortVersion = verificationRequest.version.split(
+        '+',
+      )[0] as SolidityCompilerShortVersion
     } else {
       // Short version, get long
       longVersion = await this.getLongVersion(verificationRequest.version)
@@ -81,13 +95,13 @@ export class ContractVerifier {
         version: shortVersion,
         sources: verificationRequest.sources,
         settings: {
-          optimizer: verificationRequest.settings.optimizer
-        }
+          optimizer: verificationRequest.settings.optimizer,
+        },
       },
       config: {
         // Default mode public
-        mode: 'public'
-      }
+        mode: 'public',
+      },
     }
 
     const etherscanVerificationRequest: EtherscanVerificationRequest = {
@@ -100,37 +114,62 @@ export class ContractVerifier {
           optimizer: verificationRequest.settings.optimizer,
           outputSelection: {
             // Default output selection
-            '*': { '*': ['abi', 'evm.bytecode', 'evm.deployedBytecode', 'evm.methodIdentifiers', 'metadata'], '': ['ast'] }
+            '*': {
+              '*': [
+                'abi',
+                'evm.bytecode',
+                'evm.deployedBytecode',
+                'evm.methodIdentifiers',
+                'metadata',
+              ],
+              '': ['ast'],
+            },
           },
-          remappings: verificationRequest.settings.remappings
-        }
+          remappings: verificationRequest.settings.remappings,
+        },
       },
-      waitForSuccess: verificationRequest.waitForSuccess
+      waitForSuccess: verificationRequest.waitForSuccess,
     }
 
-    await this.tenderlyVerifier.verifyContract(address, verificationRequest.contractToVerify, tenderVerificationRequest)
-    await this.etherscanVerifier.verifyContract(address, etherscanVerificationRequest)
+    await this.tenderlyVerifier.verifyContract(
+      address,
+      verificationRequest.contractToVerify,
+      tenderVerificationRequest,
+    )
+    await this.etherscanVerifier.verifyContract(
+      address,
+      etherscanVerificationRequest,
+    )
   }
 
   // Based on https://github.com/NomicFoundation/hardhat/blob/08e2d3a8bcc1daced2f24f1dfd6acf00113c6fb5/packages/hardhat-etherscan/src/solc/version.ts
-  getLongVersion = async (shortVersion: string): Promise<SolidityCompilerLongVersion> => {
+  getLongVersion = async (
+    shortVersion: string,
+  ): Promise<SolidityCompilerLongVersion> => {
     try {
       // It would be better to query an etherscan API to get this list but there's no such API yet.
       const response = await axios.get(COMPILERS_LIST_URL)
 
       const responseText = response.data
       if (response.status < 200 || response.status > 299) {
-        throw new Error(`Unabled to get solidity compiler versions. ${responseText}`)
+        throw new Error(
+          `Unabled to get solidity compiler versions. ${responseText}`,
+        )
       }
 
       const fullVersion = responseText.releases[shortVersion]
 
       if (fullVersion === undefined || fullVersion === '') {
-        throw new Error(`Unabled to find full solidity compiler version ${shortVersion}`)
+        throw new Error(
+          `Unabled to find full solidity compiler version ${shortVersion}`,
+        )
       }
 
-      return fullVersion.replace(/(soljson-)(.*)(.js)/, '$2') as SolidityCompilerLongVersion
-    } catch (error: any) {
+      return fullVersion.replace(
+        /(soljson-)(.*)(.js)/,
+        '$2',
+      ) as SolidityCompilerLongVersion
+    } catch (error: unknown) {
       const errMsg = 'Unable to determine solidity compiler version'
       this.logger?.error(errMsg)
       throw new Error(errMsg)

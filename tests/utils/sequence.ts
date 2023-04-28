@@ -1,4 +1,5 @@
-import { BigNumberish, BytesLike, Contract, ethers } from "ethers"
+import type { BigNumberish, BytesLike, Contract} from "ethers";
+import { ethers } from "ethers"
 import { WALLET_CODE } from "./wallet"
 
 export enum SignatureType {
@@ -105,6 +106,7 @@ export function isConfigLeaf(node: ConfigTopology): node is ConfigLeaf {
   return !('left' in node || 'right' in node)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isSignerLeaf(node: any): node is SignerLeaf {
   return isConfigLeaf(node) && 'weight' in node && 'address' in node
 }

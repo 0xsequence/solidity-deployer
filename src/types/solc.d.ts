@@ -20,7 +20,17 @@ declare module 'solc' {
         [contractName: string]: string[]
       }
     }
-    evmVersion?: 'homestead' | 'tangerineWhistle' | 'spuriousDragon' | 'byzantium' | 'constantinople' | 'petersburg' | 'istanbul' | 'berlin' | 'london' | 'paris'
+    evmVersion?:
+      | 'homestead'
+      | 'tangerineWhistle'
+      | 'spuriousDragon'
+      | 'byzantium'
+      | 'constantinople'
+      | 'petersburg'
+      | 'istanbul'
+      | 'berlin'
+      | 'london'
+      | 'paris'
     libraries?: {
       [libraryFileName: string]: {
         [libraryName: string]: string
@@ -30,14 +40,14 @@ declare module 'solc' {
   }
 
   export type CompilerInput = {
-    language: string;
+    language: string
     sources: {
       [file: string]: {
-        content: string;
-      };
-    };
-    settings: CompilerInputSettings;
-  };
+        content: string
+      }
+    }
+    settings: CompilerInputSettings
+  }
 
   export type CompilerOutput = {
     contracts: {
@@ -45,27 +55,28 @@ declare module 'solc' {
         [contractName: string]: {
           evm: {
             bytecode: {
-              object: string;
-            };
-          };
-        };
-      };
-    };
-  };
+              object: string
+            }
+          }
+        }
+      }
+    }
+  }
 
-  export function setupMethods(soljson: any): SolcSnapshot;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export function setupMethods(soljson: any): SolcSnapshot
 
-  export function compile(input: string): string;
-  
+  export function compile(input: string): string
+
   export type SolcSnapshot = {
-    compile: (input: string) => string;
-    version: () => string;
-  };
+    compile: (input: string) => string
+    version: () => string
+  }
 
   export function loadRemoteVersion(
     version: string,
     callback: (err: Error | null, solcSnapshot?: SolcSnapshot) => void,
-  ): void;
+  ): void
 
-  export function version(): string;
+  export function version(): string
 }

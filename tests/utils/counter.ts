@@ -1,4 +1,5 @@
-import { ContractFactory, Signer } from 'ethers'
+import type { Signer } from 'ethers';
+import { ContractFactory } from 'ethers'
 import type { CompilerInput } from 'solc'
 
 export const COUNTER_ADDR_SEPOLIA = '0x3A15CBFa7EF9F817F11638156Af1b49e149c832a'

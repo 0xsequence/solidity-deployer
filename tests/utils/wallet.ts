@@ -1,13 +1,14 @@
 import { ethers } from 'ethers'
-import {
-  addressOf,
+import type {
   ConfigTopology,
   EncodingOptions,
-  imageHash,
-  optimize2SignersTopology,
   SequenceContext,
   SimplifiedWalletConfig,
-  WalletConfig,
+  WalletConfig} from './sequence';
+import {
+  addressOf,
+  imageHash,
+  optimize2SignersTopology
 } from './sequence'
 
 export type StaticSigner = ethers.Signer & { address: string }
@@ -25,14 +26,15 @@ function shuffle<T>(a: T[]): T[] {
   return a
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isAnyStaticSigner(s: any): s is AnyStaticSigner {
-  return s.address !== undefined
+  return s?.address !== undefined
 }
 
 let LAST_CHECKPOINT = 0
 
 export function getCheckpoint() {
-  let cand = 1682638372 // Math.floor(Date.now() / 1000)
+  let cand = Math.floor(Date.now() / 1000)
 
   if (cand === LAST_CHECKPOINT) {
     cand++
@@ -74,8 +76,9 @@ export type DetailedWalletOptions = {
 
 export type Weighted<T> = { weight: number; value: T }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isWeighted<T>(w: any): w is Weighted<T> {
-  return w.weight !== undefined && w.value !== undefined
+  return w?.weight !== undefined && w?.value !== undefined
 }
 
 export function weightedVal<T>(w: Weighted<T> | T): T {
@@ -86,7 +89,7 @@ const defaultTopology = optimize2SignersTopology
 
 export class SequenceWallet {
   public isSequence = true
-  _isSigner: boolean = true
+  _isSigner = true
 
   constructor(public options: WalletOptions) {}
 

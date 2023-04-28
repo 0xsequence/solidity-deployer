@@ -1,4 +1,5 @@
-import { Contract, Signer } from 'ethers'
+import type { Signer } from 'ethers'
+import { Contract } from 'ethers'
 
 // https://eips.ethereum.org/EIPS/eip-2470
 

@@ -1,16 +1,15 @@
-import {
-  BigNumber,
+import type {
   BigNumberish,
   BytesLike,
   Contract,
   ContractFactory,
   Signer,
-  ethers,
   providers,
 } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import { SingletonFactoryContract } from '../contracts/SingletonFactory'
-import { Logger } from 'src/types/logger'
-import { Deployer } from 'src/types/deployer'
+import type { Logger } from 'src/types/logger'
+import type { Deployer } from 'src/types/deployer'
 
 export class SingletonDeployer implements Deployer {
   private readonly provider: providers.Provider

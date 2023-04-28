@@ -1,5 +1,5 @@
-import { Tenderly, TenderlyConfiguration } from '@tenderly/sdk'
-import {
+import type { Tenderly, TenderlyConfiguration } from '@tenderly/sdk'
+import type {
   BigNumber,
   BigNumberish,
   Contract,
@@ -7,16 +7,14 @@ import {
   ContractTransaction,
   Signer,
   providers,
-  utils,
 } from 'ethers'
-import {
-  ContractVerificationRequest,
-  ContractVerifier,
-} from './ContractVerifier'
+import { utils } from 'ethers'
+import type { ContractVerificationRequest } from './ContractVerifier'
+import { ContractVerifier } from './ContractVerifier'
 import { WalletFactoryContract } from './contracts/factories/WalletFactory'
 import { UniversalDeployer } from './deployers/UniversalDeployer'
-import { Deployer } from './types/deployer'
-import { Logger } from './types/logger'
+import type { Deployer } from './types/deployer'
+import type { Logger } from './types/logger'
 
 const WALLET_CODE =
   '0x603a600e3d39601a805130553df3363d3d373d3d3d363d30545af43d82803e903d91601857fd5bf3'
@@ -57,7 +55,8 @@ export class DeploymentFlow {
     moduleAddr: string,
     guards: string[],
   ): Promise<string[]> => {
-    if (!this.signer.provider) throw new Error('Signer must have a provider')
+    const { provider } = this.signer
+    if (provider) throw new Error('Signer must have a provider')
 
     // Deploy wallet factory
     const walletFactory = await this.deployer.deploy(
@@ -85,7 +84,7 @@ export class DeploymentFlow {
       )
       const guardAddr = utils.getAddress(utils.hexDataSlice(deployHash, 12))
       deployedAddrs.push(guardAddr)
-      if ((await this.signer.provider!!.getCode(guardAddr)).length > 2) {
+      if ((await provider.getCode(guardAddr)).length > 2) {
         this.logger?.log(
           `Skipping guard wallet ${guardAddr} (already deployed)`,
         )
@@ -95,16 +94,20 @@ export class DeploymentFlow {
         `Deploying guard wallet ${guardAddr} with hash ${imageHash}`,
       )
       // Deploy it
-      const tx: ContractTransaction = await walletFactory.deploy(moduleAddr, imageHash, { gasLimit: 800000 })
-      txs.push((async () => {
-        this.logger?.log(
-          `Waiting on ${guardAddr} with hash ${imageHash}`,
-        )
-        await tx.wait()
-        this.logger?.log(
-          `Deployed guard wallet ${guardAddr} with hash ${imageHash}`,
-        )
-      })())
+      const tx: ContractTransaction = await walletFactory.deploy(
+        moduleAddr,
+        imageHash,
+        { gasLimit: 800000 },
+      )
+      txs.push(
+        (async () => {
+          this.logger?.log(`Waiting on ${guardAddr} with hash ${imageHash}`)
+          await tx.wait()
+          this.logger?.log(
+            `Deployed guard wallet ${guardAddr} with hash ${imageHash}`,
+          )
+        })(),
+      )
     }
 
     await Promise.all(txs)

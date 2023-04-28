@@ -1,4 +1,5 @@
-import { Contract, Signer } from 'ethers'
+import type { Signer } from 'ethers'
+import { Contract } from 'ethers'
 
 const UNIVERSALDEPLOYER2_ADDR = '0x8a5bc19e22d6ad55a2c763b93a75d09f321fe764'
 const UNIVERSALDEPLOYER2_ABI = [

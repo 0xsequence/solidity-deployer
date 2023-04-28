@@ -2,8 +2,9 @@ import { JsonRpcProvider } from '@ethersproject/providers'
 import axios from 'axios'
 import { config as dotenvConfig } from 'dotenv'
 import { ContractFactory, Wallet } from 'ethers'
+import type {
+  EtherscanVerificationRequest} from '../../src/verifiers/EtherscanVerifier';
 import {
-  EtherscanVerificationRequest,
   EtherscanVerifier,
 } from '../../src/verifiers/EtherscanVerifier'
 import {
@@ -14,6 +15,7 @@ import solc from 'solc';
 
 dotenvConfig()
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const solcSnapshot = solc.setupMethods(require('../solc/soljson-v0.8.18+commit.87f61d96'))
 
 describe('EtherscanVerifier', () => {
