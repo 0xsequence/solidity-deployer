@@ -7,9 +7,9 @@ import {
   ethers,
   providers,
 } from 'ethers'
-import type { Logger } from 'src/types/logger'
 import { UniversalDeployer2Contract } from '../contracts/UniversalDeployer2'
 import { Deployer } from 'src/types/deployer'
+import { Logger } from 'src/types/logger'
 
 export class UniversalDeployer implements Deployer {
   private readonly provider: providers.Provider

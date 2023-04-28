@@ -9,14 +9,14 @@ import {
   providers,
   utils,
 } from 'ethers'
-import { Logger } from './types/logger'
-import { Deployer } from './types/deployer'
 import {
   ContractVerificationRequest,
   ContractVerifier,
 } from './ContractVerifier'
-import { UniversalDeployer } from './deployers/UniversalDeployer'
 import { WalletFactoryContract } from './contracts/factories/WalletFactory'
+import { UniversalDeployer } from './deployers/UniversalDeployer'
+import { Deployer } from './types/deployer'
+import { Logger } from './types/logger'
 
 const WALLET_CODE =
   '0x603a600e3d39601a805130553df3363d3d373d3d3d363d30545af43d82803e903d91601857fd5bf3'
