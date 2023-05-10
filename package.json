@@ -9,8 +9,8 @@
     "ethereum",
     "deploy"
   ],
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "typings": "dist/src/index.d.ts",
   "repository": "https://github.com/0xsequence/solidity-deployer.git",
   "bugs": {
     "url": "https://github.com/0xsequence/solidity-deployer/issues"
