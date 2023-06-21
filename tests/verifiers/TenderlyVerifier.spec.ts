@@ -1,9 +1,29 @@
+import { JsonRpcProvider } from '@ethersproject/providers'
+import type { VerificationRequest } from '@tenderly/sdk'
 import { Network, Tenderly } from '@tenderly/sdk'
 import { config as dotenvConfig } from 'dotenv'
+import { Wallet } from 'ethers'
+import solc from 'solc'
 import { TenderlyVerifier } from '../../src/verifiers/TenderlyVerifier'
-import { COUNTER_ADDR_SEPOLIA, COUNTER_SOURCE } from '../utils/counter'
+import {
+  NAMED_COUNTER_BYTECODE,
+  NAMED_COUNTER_COMPILER_INPUT,
+  NamedCounterFactory,
+} from '../utils/namedCounter'
 
 dotenvConfig()
+const {
+  TENDERLY_ACCESS_KEY,
+  TENDERLY_ACCOUNT_NAME,
+  TENDERLY_PROJECT_NAME,
+  SEPOLIA_RPC_URL,
+  SEPOLIA_PRIVATE_KEY,
+} = process.env
+
+const solcSnapshot = solc.setupMethods(
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require('../solc/soljson-v0.8.18+commit.87f61d96'),
+)
 
 describe('TenderlyVerifier', () => {
   let verifier: TenderlyVerifier
@@ -15,9 +35,9 @@ describe('TenderlyVerifier', () => {
     let tenderly: Tenderly
 
     if (
-      process.env.TENDERLY_ACCESS_KEY === undefined ||
-      process.env.TENDERLY_ACCOUNT_NAME === undefined ||
-      process.env.TENDERLY_PROJECT_NAME === undefined
+      TENDERLY_ACCESS_KEY === undefined ||
+      TENDERLY_ACCOUNT_NAME === undefined ||
+      TENDERLY_PROJECT_NAME === undefined
     ) {
       console.log('Tenderly configuration not found, using stubs')
       // Stub tenderly
@@ -33,9 +53,9 @@ describe('TenderlyVerifier', () => {
       // Do it for real. Requires manual review on Tenderly
       console.log('Tenderly configuration found, using real API for tests')
       tenderly = new Tenderly({
-        accessKey: process.env.TENDERLY_ACCESS_KEY,
-        accountName: process.env.TENDERLY_ACCOUNT_NAME,
-        projectName: process.env.TENDERLY_PROJECT_NAME,
+        accessKey: TENDERLY_ACCESS_KEY,
+        accountName: TENDERLY_ACCOUNT_NAME,
+        projectName: TENDERLY_PROJECT_NAME,
         network: Network.SEPOLIA,
       })
     }
@@ -48,26 +68,49 @@ describe('TenderlyVerifier', () => {
     })
 
     it('verifies Tenderly source', async () => {
-      await verifier.verifyContract(COUNTER_ADDR_SEPOLIA, 'Counter.sol', {
+      // Build from source
+      const namedOutput = JSON.parse(
+        solcSnapshot.compile(JSON.stringify(NAMED_COUNTER_COMPILER_INPUT)),
+      )
+      const { evm } =
+        namedOutput.contracts['contracts/NamedCounter.sol']['NamedCounter']
+      const counterBytecode = '0x' + evm.bytecode.object
+      expect(counterBytecode).toEqual(NAMED_COUNTER_BYTECODE)
+
+      //FIXME Need to add a delay after deployment to allow verifiers to pick up the contract
+      // Deploy it
+      const provider = new JsonRpcProvider(SEPOLIA_RPC_URL)
+      const wallet = new Wallet(SEPOLIA_PRIVATE_KEY, provider)
+      const factory = new NamedCounterFactory(wallet)
+      const deployed = await factory.deploy()
+      const namedContractAddr = deployed.address
+      // const namedContractAddr = '0x0922984956b565DD0945d9B8FaD54995a33eF56C'
+      console.log('NamedCounter deployed at', namedContractAddr)
+
+      const request: VerificationRequest = {
         config: {
           mode: 'public',
         },
-        contractToVerify: 'Counter.sol:CounterWithLogs',
+        contractToVerify: 'contracts/NamedCounter.sol:NamedCounter',
         solc: {
           version: 'v0.8.18',
-          sources: {
-            'Counter.sol': {
-              content: COUNTER_SOURCE,
-            },
-          },
+          sources: NAMED_COUNTER_COMPILER_INPUT.sources,
           settings: {
-            libraries: {},
+            viaIR: NAMED_COUNTER_COMPILER_INPUT.settings.viaIR,
             optimizer: {
-              enabled: false,
+              enabled: NAMED_COUNTER_COMPILER_INPUT.settings.optimizer.enabled,
+              runs: NAMED_COUNTER_COMPILER_INPUT.settings.optimizer.runs,
             },
+            remappings: NAMED_COUNTER_COMPILER_INPUT.settings.remappings,
           },
         },
-      })
+      }
+
+      await verifier.verifyContract(
+        namedContractAddr,
+        'NamedCounter.sol',
+        request,
+      )
 
       // Check
       if (addStub) {
@@ -76,6 +119,6 @@ describe('TenderlyVerifier', () => {
       if (verifyStub) {
         expect(verifyStub).toHaveBeenCalledTimes(1)
       }
-    })
+    }, 300000)
   })
 })

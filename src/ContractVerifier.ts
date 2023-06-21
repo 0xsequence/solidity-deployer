@@ -5,15 +5,18 @@ import type {
 } from '@tenderly/sdk'
 import axios from 'axios'
 import type { ContractFactory, Signer, ethers } from 'ethers'
+import { writeFile } from 'fs/promises'
+import { join } from 'path'
+import type { EvmVersion } from 'solc'
+import type { Logger } from './types/logger'
 import type { EtherscanVerificationRequest } from './verifiers/EtherscanVerifier'
 import { EtherscanVerifier } from './verifiers/EtherscanVerifier'
 import { TenderlyVerifier } from './verifiers/TenderlyVerifier'
-import type { Logger } from './types/logger'
 
-type SolidityCompilerShortVersion = `v${number}.${number}.${number}`
-type SolidityCompilerLongVersion =
+export type SolidityCompilerShortVersion = `v${number}.${number}.${number}`
+export type SolidityCompilerLongVersion =
   `v${number}.${number}.${number}+commit.${string}`
-type SolidityCompilerVersion =
+export type SolidityCompilerVersion =
   | SolidityCompilerShortVersion
   | SolidityCompilerLongVersion
 type Path = string
@@ -30,6 +33,8 @@ export type ContractVerificationRequest = {
     }
   >
   settings: {
+    evmVersion?: EvmVersion
+    viaIR?: boolean
     optimizer: {
       enabled: boolean
       runs: number
@@ -57,7 +62,11 @@ export class ContractVerifier {
     private readonly logger?: Logger,
   ) {
     this.tenderlyVerifier = new TenderlyVerifier(tenderly)
-    this.etherscanVerifier = new EtherscanVerifier(etherscanApiKey, networkName)
+    this.etherscanVerifier = new EtherscanVerifier(
+      etherscanApiKey,
+      networkName,
+      logger,
+    )
   }
 
   validateBytecode = <T extends ContractFactory>(
@@ -88,15 +97,32 @@ export class ContractVerifier {
       longVersion = await this.getLongVersion(verificationRequest.version)
     }
 
-    // Construct different verification requests
+    const compilerSettings = {
+      evmVersion: verificationRequest.settings.evmVersion,
+      viaIR: verificationRequest.settings.viaIR,
+      optimizer: verificationRequest.settings.optimizer,
+      outputSelection: {
+        // Default output selection
+        '*': {
+          '*': [
+            'abi',
+            'evm.bytecode',
+            'evm.deployedBytecode',
+            'evm.methodIdentifiers',
+            'metadata',
+          ],
+          '': ['ast'],
+        },
+      },
+      remappings: verificationRequest.settings.remappings,
+    }
+
     const tenderVerificationRequest: VerificationRequest = {
       contractToVerify: verificationRequest.contractToVerify,
       solc: {
         version: shortVersion,
         sources: verificationRequest.sources,
-        settings: {
-          optimizer: verificationRequest.settings.optimizer,
-        },
+        settings: compilerSettings,
       },
       config: {
         // Default mode public
@@ -104,29 +130,27 @@ export class ContractVerifier {
       },
     }
 
+    // Write the compiler input file
+    this.logger?.log(
+      `Writing compiler input file to: ${
+        verificationRequest.contractToVerify.split(':')[1]
+      }.tenderly.json`,
+    )
+    await writeFile(
+      join(
+        '.',
+        `${verificationRequest.contractToVerify.split(':')[1]}.tenderly.json`,
+      ),
+      JSON.stringify(tenderVerificationRequest, null, 2),
+    )
+
     const etherscanVerificationRequest: EtherscanVerificationRequest = {
       contractToVerify: verificationRequest.contractToVerify,
       version: longVersion,
       compilerInput: {
         language: 'Solidity',
         sources: verificationRequest.sources,
-        settings: {
-          optimizer: verificationRequest.settings.optimizer,
-          outputSelection: {
-            // Default output selection
-            '*': {
-              '*': [
-                'abi',
-                'evm.bytecode',
-                'evm.deployedBytecode',
-                'evm.methodIdentifiers',
-                'metadata',
-              ],
-              '': ['ast'],
-            },
-          },
-          remappings: verificationRequest.settings.remappings,
-        },
+        settings: compilerSettings,
       },
       waitForSuccess: verificationRequest.waitForSuccess,
     }

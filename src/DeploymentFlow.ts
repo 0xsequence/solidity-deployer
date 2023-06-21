@@ -41,7 +41,7 @@ export class DeploymentFlow {
     if (deployer) {
       this.deployer = deployer
     } else {
-      this.deployer = new UniversalDeployer(signer)
+      this.deployer = new UniversalDeployer(signer, logger)
     }
   }
 

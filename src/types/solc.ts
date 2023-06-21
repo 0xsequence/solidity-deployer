@@ -1,6 +1,18 @@
 // These are not the official type definitions
 
 declare module 'solc' {
+  export type EvmVersion =
+    | 'homestead'
+    | 'tangerineWhistle'
+    | 'spuriousDragon'
+    | 'byzantium'
+    | 'constantinople'
+    | 'petersburg'
+    | 'istanbul'
+    | 'berlin'
+    | 'london'
+    | 'paris'
+
   export type CompilerInputSettings = {
     viaIR?: boolean
     optimizer: {
@@ -20,17 +32,7 @@ declare module 'solc' {
         [contractName: string]: string[]
       }
     }
-    evmVersion?:
-      | 'homestead'
-      | 'tangerineWhistle'
-      | 'spuriousDragon'
-      | 'byzantium'
-      | 'constantinople'
-      | 'petersburg'
-      | 'istanbul'
-      | 'berlin'
-      | 'london'
-      | 'paris'
+    evmVersion?: EvmVersion
     libraries?: {
       [libraryFileName: string]: {
         [libraryName: string]: string

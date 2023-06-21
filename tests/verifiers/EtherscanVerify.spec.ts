@@ -2,21 +2,17 @@ import { JsonRpcProvider } from '@ethersproject/providers'
 import axios from 'axios'
 import { config as dotenvConfig } from 'dotenv'
 import { ContractFactory, Wallet } from 'ethers'
-import type {
-  EtherscanVerificationRequest} from '../../src/verifiers/EtherscanVerifier';
-import {
-  EtherscanVerifier,
-} from '../../src/verifiers/EtherscanVerifier'
-import {
-  COUNTER_ADDR_SEPOLIA,
-  COUNTER_COMPILER_INPUT,
-} from '../utils/counter'
-import solc from 'solc';
+import type { EtherscanVerificationRequest } from '../../src/verifiers/EtherscanVerifier'
+import { EtherscanVerifier } from '../../src/verifiers/EtherscanVerifier'
+import { COUNTER_ADDR_SEPOLIA, COUNTER_COMPILER_INPUT } from '../utils/counter'
+import solc from 'solc'
 
 dotenvConfig()
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const solcSnapshot = solc.setupMethods(require('../solc/soljson-v0.8.18+commit.87f61d96'))
+const solcSnapshot = solc.setupMethods(
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require('../solc/soljson-v0.8.18+commit.87f61d96'),
+)
 
 describe('EtherscanVerifier', () => {
   let etherscanVerifier: EtherscanVerifier
@@ -72,16 +68,25 @@ describe('EtherscanVerifier', () => {
     ) {
       // Etherscan will automatically verify the contract if it's already deployed with the same settings
       // So we randomise the number of runs. That'll work most of the time
-      request.compilerInput.settings.optimizer.runs = Math.floor(Math.random() * 10000)
+      request.compilerInput.settings.optimizer.runs = Math.floor(
+        Math.random() * 10000,
+      )
 
       // Create the factory from scratch
-      const compilerOutput = JSON.parse(solcSnapshot.compile(JSON.stringify(request.compilerInput)))
-      const contractOutput = compilerOutput.contracts['contracts/Counter.sol']['CounterWithLogs']
+      const compilerOutput = JSON.parse(
+        solcSnapshot.compile(JSON.stringify(request.compilerInput)),
+      )
+      const contractOutput =
+        compilerOutput.contracts['contracts/Counter.sol']['CounterWithLogs']
 
-      // // // Deploy something new so we can verify it
+      // Deploy something new so we can verify it
       const provider = new JsonRpcProvider(SEPOLIA_RPC_URL)
       const wallet = new Wallet(SEPOLIA_PRIVATE_KEY, provider)
-      const factory = new ContractFactory(contractOutput.abi, contractOutput.evm.bytecode, wallet)
+      const factory = new ContractFactory(
+        contractOutput.abi,
+        contractOutput.evm.bytecode,
+        wallet,
+      )
       const deployed = await factory.deploy()
       contractAddr = deployed.address
       console.log(contractAddr)
