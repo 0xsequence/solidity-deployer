@@ -25,49 +25,23 @@ const solcSnapshot = solc.setupMethods(
   require('../solc/soljson-v0.8.18+commit.87f61d96'),
 )
 
-describe('TenderlyVerifier', () => {
+const describeOrSkip =
+  TENDERLY_ACCESS_KEY === undefined ||
+  TENDERLY_ACCOUNT_NAME === undefined ||
+  TENDERLY_PROJECT_NAME === undefined
+    ? describe.skip
+    : describe
+
+describeOrSkip('TenderlyVerifier', () => {
   let verifier: TenderlyVerifier
 
   let addStub: jest.SpyInstance
   let verifyStub: jest.SpyInstance
 
+  let namedContractAddr = '0x0922984956b565DD0945d9B8FaD54995a33eF56C'
+
   beforeAll(async () => {
-    let tenderly: Tenderly
-
-    if (
-      TENDERLY_ACCESS_KEY === undefined ||
-      TENDERLY_ACCOUNT_NAME === undefined ||
-      TENDERLY_PROJECT_NAME === undefined
-    ) {
-      console.log('Tenderly configuration not found, using stubs')
-      // Stub tenderly
-      tenderly = new Tenderly({
-        accessKey: 'ABC',
-        accountName: 'DEF',
-        projectName: 'GHI',
-        network: Network.SEPOLIA,
-      })
-      addStub = jest.spyOn(tenderly.contracts, 'add').mockImplementation()
-      verifyStub = jest.spyOn(tenderly.contracts, 'verify').mockImplementation()
-    } else {
-      // Do it for real. Requires manual review on Tenderly
-      console.log('Tenderly configuration found, using real API for tests')
-      tenderly = new Tenderly({
-        accessKey: TENDERLY_ACCESS_KEY,
-        accountName: TENDERLY_ACCOUNT_NAME,
-        projectName: TENDERLY_PROJECT_NAME,
-        network: Network.SEPOLIA,
-      })
-    }
-    verifier = new TenderlyVerifier(tenderly)
-  })
-
-  describe('Tenderly Verification', () => {
-    afterEach(async () => {
-      jest.restoreAllMocks()
-    })
-
-    it('verifies Tenderly source', async () => {
+    if (SEPOLIA_RPC_URL !== undefined && SEPOLIA_PRIVATE_KEY !== undefined) {
       // Build from source
       const namedOutput = JSON.parse(
         solcSnapshot.compile(JSON.stringify(NAMED_COUNTER_COMPILER_INPUT)),
@@ -83,10 +57,27 @@ describe('TenderlyVerifier', () => {
       const wallet = new Wallet(SEPOLIA_PRIVATE_KEY, provider)
       const factory = new NamedCounterFactory(wallet)
       const deployed = await factory.deploy()
-      const namedContractAddr = deployed.address
-      // const namedContractAddr = '0x0922984956b565DD0945d9B8FaD54995a33eF56C'
+      namedContractAddr = deployed.address
       console.log('NamedCounter deployed at', namedContractAddr)
+    }
 
+    // Do it for real. Requires manual review on Tenderly
+    console.log('Tenderly configuration found, using real API for tests')
+    const tenderly = new Tenderly({
+      accessKey: TENDERLY_ACCESS_KEY,
+      accountName: TENDERLY_ACCOUNT_NAME,
+      projectName: TENDERLY_PROJECT_NAME,
+      network: Network.SEPOLIA,
+    })
+    verifier = new TenderlyVerifier(tenderly)
+  }, 120000)
+
+  describe('Tenderly Verification', () => {
+    afterEach(async () => {
+      jest.restoreAllMocks()
+    })
+
+    it('verifies Tenderly source', async () => {
       const request: VerificationRequest = {
         config: {
           mode: 'public',
@@ -119,6 +110,6 @@ describe('TenderlyVerifier', () => {
       if (verifyStub) {
         expect(verifyStub).toHaveBeenCalledTimes(1)
       }
-    }, 300000)
+    }, 30000)
   })
 })

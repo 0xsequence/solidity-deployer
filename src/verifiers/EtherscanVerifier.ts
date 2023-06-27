@@ -1,6 +1,8 @@
 import axios from 'axios'
 import type { CompilerInput } from 'solc'
 import type { Logger } from 'src/types/logger'
+// import { writeFile } from 'fs/promises'
+// import { join } from 'path'
 
 export type EtherscanVerificationRequest = {
   contractToVerify: string
@@ -49,6 +51,20 @@ export class EtherscanVerifier {
     if (request.constructorArgs) {
       body.constructorArguements = request.constructorArgs // Typo in Etherscan API
     }
+
+    // Write the compiler input file
+    // this.logger?.log(
+    //   `Writing compiler input file to: ${
+    //     request.contractToVerify.split(':')[1]
+    //   }.etherscan.json`,
+    // )
+    // await writeFile(
+    //   join(
+    //     '.',
+    //     `${request.contractToVerify.split(':')[1]}.etherscan.json`,
+    //   ),
+    //   JSON.stringify(body, null, 2),
+    // )
 
     //TODO Add linked library information
 

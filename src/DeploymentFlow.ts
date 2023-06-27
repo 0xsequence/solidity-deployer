@@ -56,7 +56,7 @@ export class DeploymentFlow {
     guards: string[],
   ): Promise<string[]> => {
     const { provider } = this.signer
-    if (provider) throw new Error('Signer must have a provider')
+    if (!provider) throw new Error('Signer must have a provider')
 
     // Deploy wallet factory
     const walletFactory = await this.deployer.deploy(

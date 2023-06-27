@@ -5,8 +5,8 @@ import type {
 } from '@tenderly/sdk'
 import axios from 'axios'
 import type { ContractFactory, Signer, ethers } from 'ethers'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
+// import { writeFile } from 'fs/promises'
+// import { join } from 'path'
 import type { EvmVersion } from 'solc'
 import type { Logger } from './types/logger'
 import type { EtherscanVerificationRequest } from './verifiers/EtherscanVerifier'
@@ -131,18 +131,18 @@ export class ContractVerifier {
     }
 
     // Write the compiler input file
-    this.logger?.log(
-      `Writing compiler input file to: ${
-        verificationRequest.contractToVerify.split(':')[1]
-      }.tenderly.json`,
-    )
-    await writeFile(
-      join(
-        '.',
-        `${verificationRequest.contractToVerify.split(':')[1]}.tenderly.json`,
-      ),
-      JSON.stringify(tenderVerificationRequest, null, 2),
-    )
+    // this.logger?.log(
+    //   `Writing compiler input file to: ${
+    //     verificationRequest.contractToVerify.split(':')[1]
+    //   }.tenderly.json`,
+    // )
+    // await writeFile(
+    //   join(
+    //     '.',
+    //     `${verificationRequest.contractToVerify.split(':')[1]}.tenderly.json`,
+    //   ),
+    //   JSON.stringify(tenderVerificationRequest, null, 2),
+    // )
 
     const etherscanVerificationRequest: EtherscanVerificationRequest = {
       contractToVerify: verificationRequest.contractToVerify,
