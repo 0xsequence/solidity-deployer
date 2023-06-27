@@ -52,8 +52,8 @@ describe('ContractVerifier', () => {
   it('validates', async () => {
     const contractToVerify = 'contracts/NamedCounter.sol:NamedCounter'
     const { sources } = NAMED_COUNTER_COMPILER_INPUT
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const settings: any = {
-      // eslint-disable-line @typescript-eslint/no-explicit-any
       evmVersion: NAMED_COUNTER_COMPILER_INPUT.settings.evmVersion,
       viaIR: NAMED_COUNTER_COMPILER_INPUT.settings.viaIR,
       optimizer: {
@@ -70,7 +70,6 @@ describe('ContractVerifier', () => {
       settings,
       waitForSuccess: true,
     })
-
     ;(settings.outputSelection = {
       // Default output selection
       '*': {
