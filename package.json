@@ -1,13 +1,17 @@
 {
-  "name": "solidity-deployer",
-  "version": "1.0.0",
-  "description": "A workflow for deploying solidity contract",
+  "name": "@0xsequence/solidity-deployer",
+  "version": "0.0.1",
+  "description": "A workflow for deploying solidity contracts",
   "keywords": [
     "solidity",
     "smart-contracts",
     "blockchain",
     "ethereum",
     "deploy"
+  ],
+  "files": [
+    "dist/src",
+    "src"
   ],
   "main": "dist/src/index.js",
   "typings": "dist/src/index.d.ts",
@@ -21,7 +25,6 @@
   "scripts": {
     "build": "tsc -p .",
     "test": "jest",
-    "publish": "yarn build && npm publish",
     "lint:init": "husky install",
     "lint": "eslint . --ext .ts"
   },
