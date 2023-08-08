@@ -1,4 +1,4 @@
-import type { Block} from '@ethersproject/providers';
+import type { Block } from '@ethersproject/providers'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { config as dotenvConfig } from 'dotenv'
 import { BigNumber, Wallet } from 'ethers'
@@ -25,11 +25,14 @@ describe('UniversalDeployer', () => {
         .mockReturnValue(
           Promise.resolve({ name: 'unknown', chainId: 11155111 }),
         )
-      jest.spyOn(provider, 'getBlock').mockResolvedValue({ gasLimit: BigNumber.from(5) } as Block)
+      jest
+        .spyOn(provider, 'getBlock')
+        .mockResolvedValue({ gasLimit: BigNumber.from(5) } as Block)
       const codeStub = jest.spyOn(provider, 'getCode')
       codeStub
-        .mockReturnValueOnce(Promise.resolve('0x')) // Before deploy
-        .mockReturnValueOnce(Promise.resolve('0x123')) // After deploy
+        .mockReturnValueOnce(Promise.resolve('0x')) // Contract before deploy
+        .mockReturnValueOnce(Promise.resolve('0x123')) // Universal Deployer
+        .mockReturnValueOnce(Promise.resolve('0x123')) // Contract after deploy
 
       const wallet = Wallet.createRandom().connect(provider)
 

@@ -12,7 +12,7 @@ import { utils } from 'ethers'
 import type { ContractVerificationRequest } from './ContractVerifier'
 import { ContractVerifier } from './ContractVerifier'
 import { WalletFactoryContract } from './contracts/factories/WalletFactory'
-import { UniversalDeployer } from './deployers/UniversalDeployer'
+import { UniversalDeployer } from './deployers'
 import type { Deployer } from './types/deployer'
 import type { Logger } from './types/logger'
 

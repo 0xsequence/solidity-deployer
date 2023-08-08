@@ -6,10 +6,23 @@ import type {
   Signer,
   providers,
 } from 'ethers'
-import { ethers } from 'ethers'
-import { UniversalDeployer2Contract } from '../contracts/UniversalDeployer2'
+import { BigNumber, ethers } from 'ethers'
 import type { Deployer } from 'src/types/deployer'
 import type { Logger } from 'src/types/logger'
+import {
+  UNIVERSALDEPLOYER2_ADDR,
+  UNIVERSALDEPLOYER_2_BYTECODE,
+  UniversalDeployer2Contract,
+} from '../contracts/UniversalDeployer2'
+
+const EOA_UNIVERSALDEPLOYER_ADDRESS =
+  '0x9c5a87452d4FAC0cbd53BDCA580b20A45526B3AB'
+const UNIVERSALDEPLOYER_ADDRESS = '0x1b926fbb24a9f78dcdd3272f2d86f5d0660e59c0'
+const UNIVERSALDEPLOYER_FUNDING = BigNumber.from(300).mul(
+  BigNumber.from(10).pow(14),
+)
+const UNIVERSALDEPLOYER_TX =
+  '0xf9010880852416b84e01830222e08080b8b66080604052348015600f57600080fd5b50609980601d6000396000f3fe60a06020601f369081018290049091028201604052608081815260009260609284918190838280828437600092018290525084519495509392505060208401905034f5604080516001600160a01b0383168152905191935081900360200190a0505000fea26469706673582212205a310755225e3c740b2f013fb6343f4c205e7141fcdf15947f5f0e0e818727fb64736f6c634300060a00331ca01820182018201820182018201820182018201820182018201820182018201820a01820182018201820182018201820182018201820182018201820182018201820'
 
 export class UniversalDeployer implements Deployer {
   private readonly provider: providers.Provider
@@ -26,6 +39,77 @@ export class UniversalDeployer implements Deployer {
       this.universalFactory = universalFactory
     } else {
       this.universalFactory = new UniversalDeployer2Contract(this.signer)
+    }
+  }
+
+  deployDeployer = async (txParams: providers.TransactionRequest = {}) => {
+    if (
+      (await this.provider.getCode(this.universalFactory.address)).length > 2
+    ) {
+      // Already deployed
+      return
+    }
+
+    if (this.universalFactory.address !== UNIVERSALDEPLOYER2_ADDR) {
+      const errMsg = `Unable to deploy universal deployer at ${this.universalFactory.address}`
+      this.logger?.error(errMsg)
+      throw new Error(errMsg)
+    }
+
+    // Deploy universal deployer v1 first
+    if ((await this.provider.getCode(UNIVERSALDEPLOYER_ADDRESS)).length <= 2) {
+      // Fund deployer EOA
+      const eoaBalance = await this.provider.getBalance(
+        EOA_UNIVERSALDEPLOYER_ADDRESS,
+      )
+      if (eoaBalance.lt(UNIVERSALDEPLOYER_FUNDING)) {
+        this.logger?.log("Funding universal deployer's EOA")
+        const tx = await this.signer.sendTransaction({
+          to: EOA_UNIVERSALDEPLOYER_ADDRESS,
+          value: UNIVERSALDEPLOYER_FUNDING.sub(eoaBalance),
+          ...txParams,
+        })
+        const receipt = await tx.wait()
+        if (receipt.status !== 1) {
+          const errMsg = `Failed to fund universal deployer EOA ${EOA_UNIVERSALDEPLOYER_ADDRESS} with ${UNIVERSALDEPLOYER_FUNDING}`
+          this.logger?.error(errMsg)
+          throw new Error(errMsg)
+        }
+      }
+
+      // Deploy universal deployer v1
+      this.logger?.log('Deploying universal deployer contract')
+      const tx = await this.provider.sendTransaction(UNIVERSALDEPLOYER_TX)
+      const receipt = await tx.wait()
+
+      // Confirm deployment
+      if (
+        receipt.status !== 1 ||
+        (await this.provider.getCode(UNIVERSALDEPLOYER_ADDRESS)).length <= 2
+      ) {
+        const errMsg = `Failed to deploy universal deployer at ${UNIVERSALDEPLOYER_ADDRESS}`
+        this.logger?.error(errMsg)
+        throw new Error(errMsg)
+      }
+    }
+
+    // Deploy unvieral deployer v2
+    this.logger?.log('Deploying universal deployer v2 contract')
+    const tx2 = await this.signer.sendTransaction({
+      to: UNIVERSALDEPLOYER_ADDRESS,
+      data: UNIVERSALDEPLOYER_2_BYTECODE,
+      ...txParams,
+    })
+    const receipt2 = await tx2.wait()
+
+    // Confirm deployment
+    if (
+      receipt2.status !== 1 ||
+      (await this.provider.getCode(UNIVERSALDEPLOYER2_ADDR)).length <= 2
+    ) {
+      const errMsg = `Failed to deploy universal deployer v2 at ${UNIVERSALDEPLOYER2_ADDR}`
+      this.logger?.error(errMsg)
+      throw new Error(errMsg)
     }
   }
 
@@ -59,6 +143,10 @@ export class UniversalDeployer implements Deployer {
         .getBlock('latest')
         .then(b => b.gasLimit.mul(4).div(10))
     }
+
+    // Deploy deployer if required
+    await this.deployDeployer(txParams)
+
     // Deploy it
     const tx = await this.universalFactory.deploy(
       data,
