@@ -13,6 +13,6 @@
     "moduleResolution": "node16",
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*", "tests/**/*"],
+  "include": ["src/**/*", "tests/**/*", "jest.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
