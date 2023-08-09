@@ -1,4 +1,4 @@
-import type { Block} from '@ethersproject/providers';
+import type { Block } from '@ethersproject/providers'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { config as dotenvConfig } from 'dotenv'
 import { BigNumber, Wallet } from 'ethers'
@@ -25,21 +25,27 @@ describe('SingletonDeployer', () => {
         .mockReturnValue(
           Promise.resolve({ name: 'unknown', chainId: 11155111 }),
         )
-      jest.spyOn(provider, 'getBlock').mockResolvedValue({ gasLimit: BigNumber.from(5) } as Block)
+      jest
+        .spyOn(provider, 'getBlock')
+        .mockResolvedValue({ gasLimit: BigNumber.from(5) } as Block)
       const codeStub = jest.spyOn(provider, 'getCode')
-      codeStub.mockReturnValueOnce(Promise.resolve('0x')) // Before deploy
-        .mockReturnValueOnce(Promise.resolve('0x123')) // After deploy
+      codeStub
+        .mockReturnValueOnce(Promise.resolve('0x')) // Contract before deploy
+        .mockReturnValueOnce(Promise.resolve('0x123')) // Universal Deployer
+        .mockReturnValueOnce(Promise.resolve('0x123')) // Contract after deploy
       const wallet = Wallet.createRandom().connect(provider)
 
       // Stub singleton factory
       class MockSingletonFactoryContract extends SingletonFactoryContract {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         deploy(...args: Array<any>) {
-          return super.deploy(...args);
+          return super.deploy(...args)
         }
       }
       const singletonFactory = new MockSingletonFactoryContract(wallet)
-      deployStub = jest.spyOn(singletonFactory, 'deploy').mockResolvedValue({wait: jest.fn()})
+      deployStub = jest
+        .spyOn(singletonFactory, 'deploy')
+        .mockResolvedValue({ wait: jest.fn() })
 
       deployer = new SingletonDeployer(wallet, console, singletonFactory)
     } else {

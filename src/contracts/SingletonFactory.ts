@@ -3,7 +3,8 @@ import { Contract } from 'ethers'
 
 // https://eips.ethereum.org/EIPS/eip-2470
 
-const SINGLETONFACTORY_ADDR = '0xce0042B868300000d44A59004Da54A005ffdcf9f'
+export const SINGLETONFACTORY_ADDR =
+  '0xce0042B868300000d44A59004Da54A005ffdcf9f'
 const SINGLETONFACTORY_ABI = [
   {
     constant: false,
