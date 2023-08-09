@@ -19,5 +19,5 @@ module.exports = {
     '@typescript-eslint/consistent-type-imports': 'error',
   },
 
-  ignorePatterns: ['dist', 'node_modules'],
+  ignorePatterns: ['dist', 'node_modules', 'jest.config.ts'],
 }
