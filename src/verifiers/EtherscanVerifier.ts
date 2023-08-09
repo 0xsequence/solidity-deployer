@@ -41,12 +41,28 @@ export class EtherscanVerifier {
     addr: string,
     request: EtherscanVerificationRequest,
   ): Promise<void> => {
-    // Determine network
+    // Filter out already verified contracts
+    const checkBody: Record<string, string> = {
+      apikey: this.apiKey,
+      module: 'contract',
+      action: 'getsourcecode',
+      address: addr,
+    }
 
-    //TODO Filter out already verified contracts
+    try {
+      const checkResult = await this.sendApiRequest(checkBody)
+      if (checkResult[0].SourceCode !== '') {
+        this.logger?.log(
+          `Contract ${request.contractToVerify} already verified`,
+        )
+        return
+      }
+    } catch (err) {
+      // Contract not verified. Continue
+    }
 
     // Create verification body
-    const body: Record<string, string> = {
+    const verifyBody: Record<string, string> = {
       apikey: this.apiKey,
       module: 'contract',
       action: 'verifysourcecode',
@@ -57,11 +73,11 @@ export class EtherscanVerifier {
       compilerversion: request.version,
     }
     if (request.constructorArgs) {
-      // Not typo in Etherscan API
+      // Note typo in Etherscan API
       if (request.constructorArgs.startsWith('0x')) {
-        body.constructorArguements = request.constructorArgs.substring(2)
+        verifyBody.constructorArguements = request.constructorArgs.substring(2)
       } else {
-        body.constructorArguements = request.constructorArgs
+        verifyBody.constructorArguements = request.constructorArgs
       }
     }
 
@@ -85,7 +101,8 @@ export class EtherscanVerifier {
 
     this.logger?.log(`Verifying ${request.contractToVerify} at ${this.apiUrl}`)
     try {
-      const guid = await this.sendVerifyRequest(body)
+      const guid = (await this.sendApiRequest(verifyBody)) as string
+      this.logger?.log(`Verification started`)
 
       if (request.waitForSuccess) {
         await this.waitForVerification(guid)
@@ -98,7 +115,8 @@ export class EtherscanVerifier {
   }
 
   // Throws on failure
-  sendVerifyRequest = async (body: Record<string, string>): Promise<string> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sendApiRequest = async (body: Record<string, string>): Promise<any> => {
     const res = await axios.post(this.apiUrl, new URLSearchParams(body))
     let errMsg
     if (res.status < 200 || res.status > 299) {
@@ -108,9 +126,7 @@ export class EtherscanVerifier {
       const json = res.data as EtherscanApiResponse
       if (json.status === '1') {
         // Success
-        this.logger?.log(`Verification started`)
-        const guid = json.result
-        return guid
+        return json.result
       } else {
         errMsg = `Failed to verify. Result: ${json.result}. Message: ${json.message}`
       }

@@ -31,9 +31,12 @@ describe('EtherscanVerifier', () => {
     ) {
       // Stub fetch
       console.log('Required Sepolia env vars not found, using stubs')
-      axiosPostStub = jest
-        .spyOn(axios, 'post')
-        .mockResolvedValue({ data: { status: '1', result: 'Verified' } })
+      axiosPostStub = jest.spyOn(axios, 'post')
+      axiosPostStub
+        .mockResolvedValueOnce({
+          data: { status: '0', result: 'Not verified' },
+        })
+        .mockResolvedValueOnce({ data: { status: '1', result: 'Verified' } })
       axiosGetStub = jest.spyOn(axios, 'get').mockResolvedValue({
         data: { status: '1', result: 'Passed verification' },
       })
@@ -100,7 +103,7 @@ describe('EtherscanVerifier', () => {
     await etherscanVerifier.verifyContract(contractAddr, request)
 
     if (axiosPostStub) {
-      expect(axiosPostStub).toHaveBeenCalledTimes(1)
+      expect(axiosPostStub).toHaveBeenCalledTimes(2) // Once before, once after
     }
     if (axiosGetStub) {
       // With real API, this could be called multiple times

@@ -30,9 +30,9 @@ describe('SingletonDeployer', () => {
         .mockResolvedValue({ gasLimit: BigNumber.from(5) } as Block)
       const codeStub = jest.spyOn(provider, 'getCode')
       codeStub
-        .mockReturnValueOnce(Promise.resolve('0x')) // Contract before deploy
-        .mockReturnValueOnce(Promise.resolve('0x123')) // Universal Deployer
-        .mockReturnValueOnce(Promise.resolve('0x123')) // Contract after deploy
+        .mockResolvedValueOnce('0x') // Contract before deploy
+        .mockResolvedValueOnce('0x123') // Universal Deployer
+        .mockResolvedValueOnce('0x123') // Contract after deploy
       const wallet = Wallet.createRandom().connect(provider)
 
       // Stub singleton factory
