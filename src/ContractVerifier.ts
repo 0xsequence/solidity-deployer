@@ -9,9 +9,9 @@ import type { ContractFactory, Signer, ethers } from 'ethers'
 // import { join } from 'path'
 import type { EvmVersion } from 'solc'
 import type { Logger } from './types/logger'
-import type { EtherscanVerificationRequest } from './verifiers/EtherscanVerifier'
-import { EtherscanVerifier } from './verifiers/EtherscanVerifier'
-import { TenderlyVerifier } from './verifiers/TenderlyVerifier'
+import type { EtherscanVerificationRequest } from './verifiers'
+import { EtherscanVerifier, TenderlyVerifier } from './verifiers'
+import { getEtherscanApiFromNetwork } from './verifiers/EtherscanVerifier'
 
 export type SolidityCompilerShortVersion = `v${number}.${number}.${number}`
 export type SolidityCompilerLongVersion =
@@ -64,7 +64,7 @@ export class ContractVerifier {
     this.tenderlyVerifier = new TenderlyVerifier(tenderly)
     this.etherscanVerifier = new EtherscanVerifier(
       etherscanApiKey,
-      networkName,
+      getEtherscanApiFromNetwork(networkName),
       logger,
     )
   }

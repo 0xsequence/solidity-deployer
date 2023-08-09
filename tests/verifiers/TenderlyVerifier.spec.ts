@@ -4,7 +4,7 @@ import { Network, Tenderly } from '@tenderly/sdk'
 import { config as dotenvConfig } from 'dotenv'
 import { Wallet } from 'ethers'
 import solc from 'solc'
-import { TenderlyVerifier } from '../../src/verifiers/TenderlyVerifier'
+import { TenderlyVerifier } from '../../src/verifiers'
 import {
   NAMED_COUNTER_BYTECODE,
   NAMED_COUNTER_COMPILER_INPUT,

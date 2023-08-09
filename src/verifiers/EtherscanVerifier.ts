@@ -18,10 +18,21 @@ type EtherscanApiResponse = {
   message?: string // Error
 }
 
+/**
+ * Get Etherscan's API from the network name.
+ * @param networkName The network name, e.g. 'homestead' or 'rinkeby'
+ * @returns The Etherscan API URL
+ * @notice This function does not check URL validity
+ */
+export const getEtherscanApiFromNetwork = (networkName: string) =>
+  `https://api${
+    networkName === 'homestead' ? '' : `-${networkName}`
+  }.etherscan.io/api`
+
 export class EtherscanVerifier {
   constructor(
     private readonly apiKey: string,
-    private readonly networkName: string,
+    private readonly apiUrl: string,
     private readonly logger?: Logger,
   ) {}
 
@@ -31,9 +42,6 @@ export class EtherscanVerifier {
     request: EtherscanVerificationRequest,
   ): Promise<void> => {
     // Determine network
-    const apiUrl = `https://api${
-      this.networkName === 'homestead' ? '' : `-${this.networkName}`
-    }.etherscan.io/api`
 
     //TODO Filter out already verified contracts
 
@@ -70,12 +78,12 @@ export class EtherscanVerifier {
 
     // Send the request
 
-    this.logger?.log(`Verifying ${request.contractToVerify} at ${apiUrl}`)
+    this.logger?.log(`Verifying ${request.contractToVerify} at ${this.apiUrl}`)
     try {
-      const guid = await this.sendVerifyRequest(apiUrl, body)
+      const guid = await this.sendVerifyRequest(body)
 
       if (request.waitForSuccess) {
-        await this.waitForVerification(apiUrl, guid)
+        await this.waitForVerification(guid)
       }
     } catch (err: unknown) {
       this.logger?.error(`Failed to verify`)
@@ -85,11 +93,8 @@ export class EtherscanVerifier {
   }
 
   // Throws on failure
-  sendVerifyRequest = async (
-    apiUrl: string,
-    body: Record<string, string>,
-  ): Promise<string> => {
-    const res = await axios.post(apiUrl, new URLSearchParams(body))
+  sendVerifyRequest = async (body: Record<string, string>): Promise<string> => {
+    const res = await axios.post(this.apiUrl, new URLSearchParams(body))
     let errMsg
     if (res.status < 200 || res.status > 299) {
       errMsg = `Failed to verify. Code: ${res.status}`
@@ -111,7 +116,7 @@ export class EtherscanVerifier {
   }
 
   // Throws on failure
-  waitForVerification = async (apiUrl: string, guid: string): Promise<void> => {
+  waitForVerification = async (guid: string): Promise<void> => {
     // Wait for verification to complete
     this.logger?.log(`Waiting for verification to complete`)
 
@@ -124,7 +129,7 @@ export class EtherscanVerifier {
         apikey: this.apiKey,
         guid,
       })
-      const res = await axios.get(apiUrl, { params })
+      const res = await axios.get(this.apiUrl, { params })
       const json = res.data as EtherscanApiResponse
       status = json.result
       this.logger?.log(`Verification status: ${status}`)

@@ -2,10 +2,11 @@ import { JsonRpcProvider } from '@ethersproject/providers'
 import axios from 'axios'
 import { config as dotenvConfig } from 'dotenv'
 import { ContractFactory, Wallet } from 'ethers'
-import type { EtherscanVerificationRequest } from '../../src/verifiers/EtherscanVerifier'
-import { EtherscanVerifier } from '../../src/verifiers/EtherscanVerifier'
-import { COUNTER_ADDR_SEPOLIA, COUNTER_COMPILER_INPUT } from '../utils/counter'
 import solc from 'solc'
+import type { EtherscanVerificationRequest } from '../../src/verifiers'
+import { EtherscanVerifier } from '../../src/verifiers'
+import { getEtherscanApiFromNetwork } from '../../src/verifiers/EtherscanVerifier'
+import { COUNTER_ADDR_SEPOLIA, COUNTER_COMPILER_INPUT } from '../utils/counter'
 
 dotenvConfig()
 
@@ -43,7 +44,7 @@ describe('EtherscanVerifier', () => {
 
     etherscanVerifier = new EtherscanVerifier(
       ETHERSCAN_API_KEY ?? 'ABC',
-      'sepolia',
+      getEtherscanApiFromNetwork('sepolia'),
     )
   })
 

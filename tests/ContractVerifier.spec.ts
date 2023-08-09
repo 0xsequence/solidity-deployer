@@ -17,6 +17,7 @@ jest.mock('../src/verifiers/EtherscanVerifier', () => ({
   EtherscanVerifier: jest.fn().mockImplementation(() => ({
     verifyContract: jest.fn(),
   })),
+  getEtherscanApiFromNetwork: jest.fn().mockImplementation(() => 'ABC'),
 }))
 
 describe('ContractVerifier', () => {
