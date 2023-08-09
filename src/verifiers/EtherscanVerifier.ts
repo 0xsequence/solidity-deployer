@@ -57,7 +57,12 @@ export class EtherscanVerifier {
       compilerversion: request.version,
     }
     if (request.constructorArgs) {
-      body.constructorArguements = request.constructorArgs // Typo in Etherscan API
+      // Not typo in Etherscan API
+      if (request.constructorArgs.startsWith('0x')) {
+        body.constructorArguements = request.constructorArgs.substring(2)
+      } else {
+        body.constructorArguements = request.constructorArgs
+      }
     }
 
     // Write the compiler input file
