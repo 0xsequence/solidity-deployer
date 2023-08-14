@@ -32,6 +32,7 @@ export class UniversalDeployer implements Deployer {
     private readonly signer: Signer,
     private readonly logger?: Logger,
     universalFactory?: UniversalDeployer2Contract,
+    private readonly eoaFundingOverride?: BigNumberish,
   ) {
     if (!signer.provider) throw new Error('Signer must have a provider')
     this.provider = signer.provider
@@ -62,11 +63,15 @@ export class UniversalDeployer implements Deployer {
       const eoaBalance = await this.provider.getBalance(
         EOA_UNIVERSALDEPLOYER_ADDRESS,
       )
-      if (eoaBalance.lt(UNIVERSALDEPLOYER_FUNDING)) {
+
+      const eoaExpectedFunds = BigNumber.from(
+        this.eoaFundingOverride ?? UNIVERSALDEPLOYER_FUNDING,
+      )
+      if (eoaBalance.lt(eoaExpectedFunds)) {
         this.logger?.log("Funding universal deployer's EOA")
         const tx = await this.signer.sendTransaction({
           to: EOA_UNIVERSALDEPLOYER_ADDRESS,
-          value: UNIVERSALDEPLOYER_FUNDING.sub(eoaBalance),
+          value: eoaExpectedFunds.sub(eoaBalance),
           ...txParams,
         })
         const receipt = await tx.wait()

@@ -29,6 +29,7 @@ export class SingletonDeployer implements Deployer {
     private readonly signer: Signer,
     private readonly logger?: Logger,
     singletonFactory?: SingletonFactoryContract,
+    private readonly eoaFundingOverride?: BigNumberish,
   ) {
     if (!signer.provider) throw new Error('Signer must have a provider')
     this.provider = signer.provider
@@ -57,11 +58,15 @@ export class SingletonDeployer implements Deployer {
     const eoaBalance = await this.provider.getBalance(
       EOA_SINGLETONDEPLOYER_ADDRESS,
     )
-    if (eoaBalance.lt(SINGLETONDEPLOYER_FUNDING)) {
+
+    const eoaExpectedFunds = BigNumber.from(
+      this.eoaFundingOverride ?? SINGLETONDEPLOYER_FUNDING,
+    )
+    if (eoaBalance.lt(eoaExpectedFunds)) {
       this.logger?.log("Funding singleton deployer's EOA")
       const tx = await this.signer.sendTransaction({
         to: EOA_SINGLETONDEPLOYER_ADDRESS,
-        value: SINGLETONDEPLOYER_FUNDING.sub(eoaBalance),
+        value: eoaExpectedFunds.sub(eoaBalance),
         ...txParams,
       })
       const receipt = await tx.wait()
