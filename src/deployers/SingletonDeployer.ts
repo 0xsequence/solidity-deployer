@@ -71,7 +71,7 @@ export class SingletonDeployer implements Deployer {
       })
       const receipt = await tx.wait()
       if (receipt.status !== 1) {
-        const errMsg = `Failed to fund singleton deployer EOA ${EOA_SINGLETONDEPLOYER_ADDRESS} with ${SINGLETONDEPLOYER_FUNDING}`
+        const errMsg = `Failed to fund singleton deployer EOA ${EOA_SINGLETONDEPLOYER_ADDRESS} with ${eoaExpectedFunds}`
         this.logger?.error(errMsg)
         throw new Error(errMsg)
       }

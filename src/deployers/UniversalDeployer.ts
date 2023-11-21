@@ -76,7 +76,7 @@ export class UniversalDeployer implements Deployer {
         })
         const receipt = await tx.wait()
         if (receipt.status !== 1) {
-          const errMsg = `Failed to fund universal deployer EOA ${EOA_UNIVERSALDEPLOYER_ADDRESS} with ${UNIVERSALDEPLOYER_FUNDING}`
+          const errMsg = `Failed to fund universal deployer EOA ${EOA_UNIVERSALDEPLOYER_ADDRESS} with ${eoaExpectedFunds}`
           this.logger?.error(errMsg)
           throw new Error(errMsg)
         }
