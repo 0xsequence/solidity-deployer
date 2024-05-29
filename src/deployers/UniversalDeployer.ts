@@ -24,6 +24,8 @@ const UNIVERSALDEPLOYER_FUNDING = BigNumber.from(300).mul(
 const UNIVERSALDEPLOYER_TX =
   '0xf9010880852416b84e01830222e08080b8b66080604052348015600f57600080fd5b50609980601d6000396000f3fe60a06020601f369081018290049091028201604052608081815260009260609284918190838280828437600092018290525084519495509392505060208401905034f5604080516001600160a01b0383168152905191935081900360200190a0505000fea26469706673582212205a310755225e3c740b2f013fb6343f4c205e7141fcdf15947f5f0e0e818727fb64736f6c634300060a00331ca01820182018201820182018201820182018201820182018201820182018201820a01820182018201820182018201820182018201820182018201820182018201820'
 
+const DEPLOYER_MAX_GAS = ethers.utils.parseUnits("100", 'gwei')
+
 export class UniversalDeployer implements Deployer {
   private readonly provider: providers.Provider
   universalFactory: UniversalDeployer2Contract
@@ -84,17 +86,32 @@ export class UniversalDeployer implements Deployer {
 
       // Deploy universal deployer v1
       this.logger?.log('Deploying universal deployer contract')
-      const tx = await this.provider.sendTransaction(UNIVERSALDEPLOYER_TX)
-      const receipt = await tx.wait()
+      const gasPrice = BigNumber.from(txParams.gasPrice ?? await this.provider.getGasPrice())
+      const gasTooHigh = gasPrice.gt(DEPLOYER_MAX_GAS)
+      if (gasTooHigh) {
+        // Warn user that gas price is too high. Try anyway
+        this.logger?.error('Gas price too high for universal deployer. Trying anyway...')
+      }
 
-      // Confirm deployment
-      if (
-        receipt.status !== 1 ||
-        (await this.provider.getCode(UNIVERSALDEPLOYER_ADDRESS)).length <= 2
-      ) {
-        const errMsg = `Failed to deploy universal deployer at ${UNIVERSALDEPLOYER_ADDRESS}`
-        this.logger?.error(errMsg)
-        throw new Error(errMsg)
+      const tx = await this.provider.sendTransaction(UNIVERSALDEPLOYER_TX)
+      try {
+        const receipt = await tx.wait()
+
+        // Confirm deployment
+        if (
+          receipt.status !== 1 ||
+          (await this.provider.getCode(UNIVERSALDEPLOYER_ADDRESS)).length <= 2
+        ) {
+          const errMsg = `Failed to deploy universal deployer at ${UNIVERSALDEPLOYER_ADDRESS}`
+          this.logger?.error(errMsg)
+          throw new Error(errMsg)
+        }
+
+      } catch (err) {
+        if (gasTooHigh) {
+          this.logger?.error('Gas price too high for universal deployer. This is likely why the transaction failed!')
+        }
+        throw err
       }
     }
 

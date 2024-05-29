@@ -21,6 +21,8 @@ const EOA_SINGLETONDEPLOYER_ADDRESS =
 const SINGLETONDEPLOYER_TX =
   '0xf9016c8085174876e8008303c4d88080b90154608060405234801561001057600080fd5b50610134806100206000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c80634af63f0214602d575b600080fd5b60cf60048036036040811015604157600080fd5b810190602081018135640100000000811115605b57600080fd5b820183602082011115606c57600080fd5b80359060200191846001830284011164010000000083111715608d57600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600092019190915250929550509135925060eb915050565b604080516001600160a01b039092168252519081900360200190f35b6000818351602085016000f5939250505056fea26469706673582212206b44f8a82cb6b156bfcc3dc6aadd6df4eefd204bc928a4397fd15dacf6d5320564736f6c634300060200331b83247000822470'
 
+const DEPLOYER_MAX_GAS = ethers.utils.parseUnits("100", 'gwei')
+
 export class SingletonDeployer implements Deployer {
   private readonly provider: providers.Provider
   singletonFactory: SingletonFactoryContract
@@ -79,17 +81,32 @@ export class SingletonDeployer implements Deployer {
 
     // Deploy singleton deployer
     this.logger?.log('Deploying singleton deployer contract')
-    const tx = await this.provider.sendTransaction(SINGLETONDEPLOYER_TX)
-    const receipt = await tx.wait()
+    const gasPrice = BigNumber.from(txParams.gasPrice ?? await this.provider.getGasPrice())
+    const gasTooHigh = gasPrice.gt(DEPLOYER_MAX_GAS)
+    if (gasTooHigh) {
+      // Warn user that gas price is too high. Try anyway
+      this.logger?.error('Gas price too high for singleton deployer. Trying anyway...')
+    }
 
-    // Confirm deployment
-    if (
-      receipt.status !== 1 ||
-      (await this.provider.getCode(SINGLETONFACTORY_ADDR)).length <= 2
-    ) {
-      const errMsg = `Failed to deploy singleton deployer at ${SINGLETONFACTORY_ADDR}`
-      this.logger?.error(errMsg)
-      throw new Error(errMsg)
+    const tx = await this.provider.sendTransaction(SINGLETONDEPLOYER_TX)
+    try {
+      const receipt = await tx.wait()
+
+      // Confirm deployment
+      if (
+        receipt.status !== 1 ||
+        (await this.provider.getCode(SINGLETONFACTORY_ADDR)).length <= 2
+      ) {
+        const errMsg = `Failed to deploy singleton deployer at ${SINGLETONFACTORY_ADDR}`
+        this.logger?.error(errMsg)
+        throw new Error(errMsg)
+      }
+
+    } catch (err) {
+      if (gasTooHigh) {
+        this.logger?.error('Gas price too high for singleton deployer. This is likely why the transaction failed!')
+      }
+      throw err
     }
   }
 
