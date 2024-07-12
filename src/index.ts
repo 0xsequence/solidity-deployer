@@ -7,6 +7,12 @@ import type { EtherscanVerificationRequest } from './verifiers'
 import * as verifiers from './verifiers'
 
 import type { Deployer } from './types/deployer'
+import type { Logger } from './types/logger'
 
-export { ContractVerifier, DeploymentFlow, deployers, verifiers }
-export type { ContractVerificationRequest, EtherscanVerificationRequest, Deployer }
+export { ContractVerifier, deployers, DeploymentFlow, verifiers }
+export type {
+  ContractVerificationRequest,
+  Deployer,
+  EtherscanVerificationRequest,
+  Logger,
+}
