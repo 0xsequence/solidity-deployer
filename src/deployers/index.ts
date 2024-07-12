@@ -1,4 +1,5 @@
+import { EOADeployer } from './EOADeployer'
 import { SingletonDeployer } from './SingletonDeployer'
 import { UniversalDeployer } from './UniversalDeployer'
 
-export { UniversalDeployer, SingletonDeployer }
+export { EOADeployer, SingletonDeployer, UniversalDeployer }
