@@ -12,7 +12,7 @@ jobs:
           submodules: recursive
       - uses: actions/setup-node@v1
         with:
-          node-version: 18
+          node-version: 20
       - uses: actions/cache@master
         id: yarn-cache
         with:
@@ -33,7 +33,7 @@ jobs:
           submodules: recursive
       - uses: actions/setup-node@v1
         with:
-          node-version: 18
+          node-version: 20
       - uses: actions/cache@master
         id: yarn-cache
         with:
@@ -54,7 +54,7 @@ jobs:
           submodules: recursive
       - uses: actions/setup-node@v1
         with:
-          node-version: 18
+          node-version: 20
       - uses: actions/cache@master
         id: yarn-cache
         with:
