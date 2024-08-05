@@ -1,4 +1,4 @@
-import type { TenderlyConfiguration, VerificationRequest } from '@tenderly/sdk'
+import type { TenderlyConfiguration, VerificationRequest as TenderlyVerificationRequest } from '@tenderly/sdk'
 import { Tenderly } from '@tenderly/sdk'
 
 export class TenderlyVerifier {
@@ -14,7 +14,7 @@ export class TenderlyVerifier {
   verifyContract = async (
     address: string,
     contractAlias: string,
-    tenderVerificationRequest: VerificationRequest,
+    tenderVerificationRequest: TenderlyVerificationRequest,
   ): Promise<void> => {
     const addr = address.toLowerCase()
 

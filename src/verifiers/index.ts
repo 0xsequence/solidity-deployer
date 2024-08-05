@@ -1,6 +1,15 @@
-import type { EtherscanVerificationRequest } from './EtherscanVerifier'
-import { EtherscanVerifier } from './EtherscanVerifier'
+import {
+  BlockscoutVerifier,
+  type BlockscoutVerificationRequest,
+} from './BlockscoutVerifier'
+import {
+  EtherscanVerifier,
+  type EtherscanVerificationRequest,
+} from './EtherscanVerifier'
 import { TenderlyVerifier } from './TenderlyVerifier'
 
-export type { EtherscanVerificationRequest }
-export { EtherscanVerifier, TenderlyVerifier }
+export type VerificationRequest = BlockscoutVerificationRequest &
+  EtherscanVerificationRequest
+
+export { BlockscoutVerifier, EtherscanVerifier, TenderlyVerifier }
+export type { BlockscoutVerificationRequest, EtherscanVerificationRequest }
