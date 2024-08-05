@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { File, FormData } from 'formdata-node'
 import type { CompilerInput } from 'solc'
 import type { Logger } from 'src/types/logger'
 
