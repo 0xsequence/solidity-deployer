@@ -24,13 +24,13 @@ describe('BlockscoutVerifier', () => {
   let contractAddr = COUNTER_ADDR_SEPOLIA
 
   beforeAll(async () => {
-    const { SEPOLIA_PRIVATE_KEY, SEPOLIA_RPC_URL } = process.env
-    if (SEPOLIA_PRIVATE_KEY === undefined || SEPOLIA_RPC_URL === undefined) {
+    const { SEPOLIA_PRIVATE_KEY, SEPOLIA_RPC_URL, BLOCKSCOUT_URL } = process.env
+    if (!SEPOLIA_PRIVATE_KEY || !SEPOLIA_RPC_URL) {
       // Stub fetch
       console.log('Required Sepolia env vars not found, using stubs')
       axiosPostStub = jest.spyOn(axios, 'postForm')
       axiosPostStub
-      .mockResolvedValueOnce({
+        .mockResolvedValueOnce({
         data: { message: 'Smart-contract verification started' },
       })
       .mockResolvedValueOnce({
@@ -42,7 +42,7 @@ describe('BlockscoutVerifier', () => {
     }
 
     blockscoutVerifier = new BlockscoutVerifier(
-      'https://eth-sepolia.blockscout.com',
+      BLOCKSCOUT_URL ?? 'https://eth-sepolia.blockscout.com',
       console,
     )
   })
