@@ -117,10 +117,6 @@ export class SingletonDeployer implements Deployer {
     txParams: providers.TransactionRequest = {},
     ...args: Parameters<T['deploy']>
   ): Promise<Contract> => {
-    if (!BigNumber.from(contractInstance).isZero()) {
-      throw new Error('Singleton cannot deploy non-zero instances')
-    }
-
     this.logger?.log(`Deploying ${name}`)
     const c = new contract(this.signer)
     const { data } = c.getDeployTransaction(...args)
@@ -130,7 +126,7 @@ export class SingletonDeployer implements Deployer {
     }
 
     // Check if contract already deployed
-    const address = await this.addressFromData(data)
+    const address = await this.addressFromData(data, contractInstance)
     if ((await this.provider.getCode(address)).length > 2) {
       this.logger?.log(
         `Skipping ${name} because it has been deployed at ${address}`,
@@ -149,9 +145,10 @@ export class SingletonDeployer implements Deployer {
     await this.deployDeployer(txParams)
 
     // Deploy it
+    const contractInstanceHash = ethers.utils.hexlify(contractInstance)
     const tx = await this.singletonFactory.deploy(
       data,
-      ethers.constants.HashZero,
+      contractInstanceHash,
       txParams,
     )
     await tx.wait()
@@ -171,32 +168,31 @@ export class SingletonDeployer implements Deployer {
     contractInstance: BigNumberish = 0,
     ...args: Parameters<T['deploy']>
   ): Promise<string> => {
-    if (!BigNumber.from(contractInstance).isZero()) {
-      throw new Error('Singleton cannot deploy non-zero instances')
-    }
-
     const c = new contract(this.signer)
     const { data } = c.getDeployTransaction(...args)
     if (!data) {
       throw new Error(`No data for ${contract.name}`)
     }
-    return this.addressFromData(data)
+    return this.addressFromData(data, contractInstance)
   }
 
-  addressFromData = async (data: BytesLike): Promise<string> => {
+  addressFromData = async (data: BytesLike, contractInstance: BigNumberish = 0): Promise<string> => {
+    const codeHash = ethers.utils.keccak256(
+      ethers.utils.solidityPack(['bytes'], [data]),
+    )
+
+    const salt = ethers.utils.hexlify(contractInstance)
+
+    const hash = ethers.utils.keccak256(
+      ethers.utils.solidityPack(
+        ['bytes1', 'address', 'bytes32', 'bytes32'],
+        ['0xff', this.singletonFactory.address, salt, codeHash],
+      ),
+    )
+
     return ethers.utils.getAddress(
       ethers.utils.hexDataSlice(
-        ethers.utils.keccak256(
-          ethers.utils.solidityPack(
-            ['bytes1', 'address', 'bytes32', 'bytes32'],
-            [
-              '0xff',
-              this.singletonFactory.address,
-              ethers.constants.HashZero,
-              ethers.utils.keccak256(data),
-            ],
-          ),
-        ),
+        hash,
         12,
       ),
     )
