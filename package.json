@@ -1,6 +1,6 @@
 {
   "name": "@0xsequence/solidity-deployer",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A workflow for deploying solidity contracts",
   "keywords": [
     "solidity",
