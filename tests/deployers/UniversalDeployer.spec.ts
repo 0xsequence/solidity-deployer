@@ -28,6 +28,9 @@ describe('UniversalDeployer', () => {
       jest
         .spyOn(provider, 'getBlock')
         .mockResolvedValue({ gasLimit: BigNumber.from(5) } as Block)
+      jest
+        .spyOn(provider, 'estimateGas')
+        .mockResolvedValue(BigNumber.from(1000000))
       const codeStub = jest.spyOn(provider, 'getCode')
       codeStub
         .mockReturnValueOnce(Promise.resolve('0x')) // Contract before deploy
