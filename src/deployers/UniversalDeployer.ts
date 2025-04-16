@@ -45,12 +45,17 @@ export class UniversalDeployer implements Deployer {
     }
   }
 
-  deployDeployer = async (txParams: providers.TransactionRequest = {}) => {
+  deployDeployer = async (defaultTxParams: providers.TransactionRequest = {}) => {
     if (
       (await this.provider.getCode(this.universalFactory.address)).length > 2
     ) {
       // Already deployed
       return
+    }
+
+    const txParams = {
+      ...defaultTxParams,
+      gasLimit: defaultTxParams.gasLimit ?? 200000,
     }
 
     if (this.universalFactory.address !== UNIVERSALDEPLOYER2_ADDR) {
@@ -115,7 +120,7 @@ export class UniversalDeployer implements Deployer {
       }
     }
 
-    // Deploy unvieral deployer v2
+    // Deploy universal deployer v2
     this.logger?.log('Deploying universal deployer v2 contract')
     const tx2 = await this.signer.sendTransaction({
       to: UNIVERSALDEPLOYER_ADDRESS,
@@ -139,7 +144,7 @@ export class UniversalDeployer implements Deployer {
     name: string,
     contract: new (...args: [signer: Signer]) => T,
     contractInstance: BigNumberish = 0,
-    txParams: providers.TransactionRequest = {},
+    defaultTxParams: providers.TransactionRequest = {},
     ...args: Parameters<T['deploy']>
   ): Promise<Contract> => {
     this.logger?.log(`Deploying ${name}`)
@@ -148,6 +153,10 @@ export class UniversalDeployer implements Deployer {
 
     if (!data) {
       throw new Error(`No data for ${name}`)
+    }
+
+    const txParams = {
+      ...defaultTxParams,
     }
 
     // Check if contract already deployed
@@ -159,15 +168,18 @@ export class UniversalDeployer implements Deployer {
       return c.attach(address)
     }
 
-    // Up the gas
-    if (!txParams.gasLimit) {
-      txParams.gasLimit = await this.provider
-        .getBlock('latest')
-        .then(b => b.gasLimit.mul(4).div(10))
-    }
-
     // Deploy deployer if required
     await this.deployDeployer(txParams)
+
+    // Up the gas
+    if (!txParams.gasLimit) {
+      const deployData = this.universalFactory.interface.encodeFunctionData('deploy', [data, contractInstance])
+      txParams.gasLimit = await this.provider.estimateGas({
+        to: this.universalFactory.address,
+        data: deployData,
+      })
+      this.logger?.log(`Estimated gas limit: ${txParams.gasLimit}`)
+    }
 
     // Deploy it
     const tx = await this.universalFactory.deploy(

@@ -114,7 +114,7 @@ export class SingletonDeployer implements Deployer {
     name: string,
     contract: new (...args: [signer: Signer]) => T,
     contractInstance: BigNumberish = 0,
-    txParams: providers.TransactionRequest = {},
+    defaultTxParams: providers.TransactionRequest = {},
     ...args: Parameters<T['deploy']>
   ): Promise<Contract> => {
     this.logger?.log(`Deploying ${name}`)
@@ -123,6 +123,10 @@ export class SingletonDeployer implements Deployer {
 
     if (!data) {
       throw new Error(`No data for ${name}`)
+    }
+
+    const txParams = {
+      ...defaultTxParams,
     }
 
     // Check if contract already deployed
@@ -134,18 +138,23 @@ export class SingletonDeployer implements Deployer {
       return c.attach(address)
     }
 
-    // Up the gas
-    if (!txParams.gasLimit) {
-      txParams.gasLimit = await this.provider
-        .getBlock('latest')
-        .then(b => b.gasLimit.mul(4).div(10))
-    }
-
     // Deploy deployer if required
     await this.deployDeployer(txParams)
 
+    // Pad to 32 bytes
+    const contractInstanceHash = "0x" + ethers.utils.hexlify(contractInstance).slice(2).padStart(32, '0')
+
+    // Up the gas
+    if (!txParams.gasLimit) {
+      const deployData = this.singletonFactory.interface.encodeFunctionData('deploy', [data, contractInstanceHash])
+      txParams.gasLimit = await this.provider.estimateGas({
+        to: this.singletonFactory.address,
+        data: deployData,
+      })
+      this.logger?.log(`Estimated gas limit: ${txParams.gasLimit}`)
+    }
+
     // Deploy it
-    const contractInstanceHash = ethers.utils.hexlify(contractInstance)
     const tx = await this.singletonFactory.deploy(
       data,
       contractInstanceHash,
