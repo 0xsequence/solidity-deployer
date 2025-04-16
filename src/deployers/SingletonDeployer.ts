@@ -142,11 +142,11 @@ export class SingletonDeployer implements Deployer {
     await this.deployDeployer(txParams)
 
     // Pad to 32 bytes
-    const contractInstanceHash = "0x" + ethers.utils.hexlify(contractInstance).slice(2).padStart(32, '0')
+    const salt = ethers.utils.solidityPack(['uint256'], [contractInstance])
 
     // Up the gas
     if (!txParams.gasLimit) {
-      const deployData = this.singletonFactory.interface.encodeFunctionData('deploy', [data, contractInstanceHash])
+      const deployData = this.singletonFactory.interface.encodeFunctionData('deploy', [data, salt])
       txParams.gasLimit = await this.provider.estimateGas({
         to: this.singletonFactory.address,
         data: deployData,
@@ -157,7 +157,7 @@ export class SingletonDeployer implements Deployer {
     // Deploy it
     const tx = await this.singletonFactory.deploy(
       data,
-      contractInstanceHash,
+      salt,
       txParams,
     )
     await tx.wait()
@@ -190,7 +190,7 @@ export class SingletonDeployer implements Deployer {
       ethers.utils.solidityPack(['bytes'], [data]),
     )
 
-    const salt = ethers.utils.hexlify(contractInstance)
+    const salt = ethers.utils.solidityPack(['uint256'], [contractInstance])
 
     const hash = ethers.utils.keccak256(
       ethers.utils.solidityPack(
