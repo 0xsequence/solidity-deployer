@@ -1,12 +1,12 @@
 import {
   BigNumber,
-  BigNumberish,
-  BytesLike,
+  type BigNumberish,
+  type BytesLike,
   Contract,
-  ContractFactory,
+  type ContractFactory,
   ethers,
-  providers,
-  Signer,
+  type providers,
+  type Signer,
   utils,
 } from 'ethers'
 import type { Deployer } from '../types/deployer'
@@ -14,11 +14,17 @@ import type { Logger } from '../types/logger'
 import { ec as EC } from 'elliptic'
 
 import { SINGLETONFACTORY_ADDR } from '../contracts/SingletonFactory'
-import { UNIVERSALDEPLOYER2_ADDR, UNIVERSALDEPLOYER2_ABI, UNIVERSALDEPLOYER_2_BYTECODE } from '../contracts/UniversalDeployer2'
+import {
+  UNIVERSALDEPLOYER2_ADDR,
+  UNIVERSALDEPLOYER2_ABI,
+  UNIVERSALDEPLOYER_2_BYTECODE,
+} from '../contracts/UniversalDeployer2'
 
 export const DEPLOYMENT_COST = ethers.utils.parseEther('0.0247')
 
-const SECP256K1_N = BigNumber.from('0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141')
+const SECP256K1_N = BigNumber.from(
+  '0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141',
+)
 
 // The test deployer will generate and deploy an ERC-2470 transaction to test that it can pass
 // Note this will use the UniversalDeployer if available, otherwise it will deploy a new one to a random address
@@ -42,7 +48,7 @@ export class TestDeployer implements Deployer {
     const ec = new EC('secp256k1')
     const key = ec.genKeyPair()
     const signature = key.sign(utils.randomBytes(32))
-    
+
     this.r = '0x' + signature.r.toString(16)
     this.s = '0x' + signature.s.toString(16)
     // Map recovery parameter to Ethereum v value (27 or 28)
@@ -151,9 +157,7 @@ export class TestDeployer implements Deployer {
     let deployerCode = await this.provider.getCode(deployerAddress)
 
     if (deployerCode.length > 2) {
-      this.logger?.log(
-        `Deployer already deployed at ${deployerAddress}`,
-      )
+      this.logger?.log(`Deployer already deployed at ${deployerAddress}`)
       if (deployerAddress === UNIVERSALDEPLOYER2_ADDR) {
         this.logger?.log(
           `Using the Universal Deployer address at ${deployerAddress}`,
@@ -170,7 +174,9 @@ export class TestDeployer implements Deployer {
     const cost = this.eoaFundingOverride ?? DEPLOYMENT_COST
     if (deployerEOABalance.lt(cost)) {
       this.logger?.log(
-        `Funding deployer EOA ${deployerEOA} from ${await this.signer.getAddress()} with ${utils.formatEther(cost)} ETH to cover gas`,
+        `Funding deployer EOA ${deployerEOA} from ${await this.signer.getAddress()} with ${utils.formatEther(
+          cost,
+        )} ETH to cover gas`,
       )
       const txFund = await this.signer.sendTransaction({
         to: deployerEOA,
