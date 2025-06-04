@@ -13,12 +13,14 @@ jest.mock('../src/verifiers/TenderlyVerifier', () => ({
   })),
 }))
 
-jest.mock('../src/verifiers/EtherscanVerifier', () => ({
-  EtherscanVerifier: jest.fn().mockImplementation(() => ({
+jest.mock('../src/verifiers/EtherscanVerifier', () => {
+  const mockGetEtherscanApiFromChainId = jest.fn().mockImplementation(() => 'ABC')
+  const MockEtherscanVerifier = jest.fn().mockImplementation(() => ({
     verifyContract: jest.fn(),
-  })),
-  getEtherscanApiFromNetwork: jest.fn().mockImplementation(() => 'ABC'),
-}))
+  })) as jest.Mock & { getEtherscanApiFromChainId: jest.Mock }
+  MockEtherscanVerifier.getEtherscanApiFromChainId = mockGetEtherscanApiFromChainId
+  return { EtherscanVerifier: MockEtherscanVerifier }
+})
 
 describe('ContractVerifier', () => {
   let verifier: ContractVerifier

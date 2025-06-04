@@ -11,7 +11,6 @@ import type { EvmVersion } from 'solc'
 import type { Logger } from './types/logger'
 import type { EtherscanVerificationRequest } from './verifiers'
 import { EtherscanVerifier, TenderlyVerifier } from './verifiers'
-import { getEtherscanApiFromNetwork } from './verifiers/EtherscanVerifier'
 
 export type SolidityCompilerShortVersion = `v${number}.${number}.${number}`
 export type SolidityCompilerLongVersion =
@@ -73,7 +72,7 @@ export class ContractVerifier {
     const chainId = extractChainId(tenderly)
     this.etherscanVerifier = new EtherscanVerifier(
       etherscanApiKey,
-      getEtherscanApiFromNetwork(chainId),
+      EtherscanVerifier.getEtherscanApiFromChainId(chainId),
       logger,
     )
   }

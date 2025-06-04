@@ -18,21 +18,15 @@ type EtherscanApiResponse = {
   message?: string // Error
 }
 
-/**
- * Get Etherscan's API from the network name.
- * @param networkName The network name, e.g. 'homestead' or 'rinkeby'
- * @returns The Etherscan API URL
- * @notice This function does not check URL validity
- */
-export const getEtherscanApiFromNetwork = (chainId: number) =>
-  `https://api.etherscan.io/v2/api?chainid=${chainId}`
-
 export class EtherscanVerifier {
   constructor(
     private readonly apiKey: string,
     private readonly apiUrl: string,
     private readonly logger?: Logger,
   ) {}
+
+  static getEtherscanApiFromChainId = (chainId: number) =>
+    `https://api.etherscan.io/v2/api?chainid=${chainId}`
 
   // Throws on failure
   verifyContract = async (
