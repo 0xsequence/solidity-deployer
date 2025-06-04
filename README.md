@@ -26,7 +26,7 @@ The `DeploymentFlow` class is the core of the project, which handles the deploym
 #### Constructor
 
 ```typescript
-constructor(tenderly: TenderlyConfiguration | Tenderly, etherscanApiKey: string, signer: Signer, networkName?: string, logger?: Logger, deployer?: Deployer)
+constructor(tenderly: TenderlyConfiguration | Tenderly, etherscanApiKey: string, signer: Signer, logger?: Logger, deployer?: Deployer)
 ```
 
 Initialize a new `DeploymentFlow` instance with the required configuration options for Tenderly, Etherscan, and other necessary parameters.
@@ -78,7 +78,7 @@ const networkName = "mainnet";
 const signer = new Wallet(privateKey);
 const tenderly = new Tenderly(tenderlyConfig);
 
-const deploymentFlow = new DeploymentFlow(tenderly, etherscanApiKey, signer, networkName);
+const deploymentFlow = new DeploymentFlow(tenderly, etherscanApiKey, signer);
 
 async function main() {
   // Deploy and verify a contract

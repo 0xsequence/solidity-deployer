@@ -24,10 +24,8 @@ type EtherscanApiResponse = {
  * @returns The Etherscan API URL
  * @notice This function does not check URL validity
  */
-export const getEtherscanApiFromNetwork = (networkName: string) =>
-  `https://api${
-    networkName === 'homestead' ? '' : `-${networkName}`
-  }.etherscan.io/api`
+export const getEtherscanApiFromNetwork = (chainId: number) =>
+  `https://api.etherscan.io/v2/api?chainid=${chainId}`
 
 export class EtherscanVerifier {
   constructor(

@@ -27,7 +27,6 @@ export class DeploymentFlow {
     tenderly: TenderlyConfiguration | Tenderly,
     etherscanApiKey: string,
     private readonly signer: Signer,
-    networkName = 'homestead',
     private readonly logger?: Logger,
     deployer?: Deployer,
   ) {
@@ -35,7 +34,6 @@ export class DeploymentFlow {
       tenderly,
       etherscanApiKey,
       signer,
-      networkName,
       logger,
     )
     if (deployer) {

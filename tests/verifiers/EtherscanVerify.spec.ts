@@ -47,7 +47,7 @@ describe('EtherscanVerifier', () => {
 
     etherscanVerifier = new EtherscanVerifier(
       ETHERSCAN_API_KEY ?? 'ABC',
-      getEtherscanApiFromNetwork('sepolia'),
+      getEtherscanApiFromNetwork(11155111), // Sepolia
     )
   })
 

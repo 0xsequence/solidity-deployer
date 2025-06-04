@@ -35,7 +35,6 @@ describe('ContractVerifier', () => {
       },
       'ETHERSCAN_API_KEY',
       Wallet.createRandom(),
-      'sepolia',
       console,
     )
   })

@@ -50,6 +50,15 @@ export type ContractVerificationRequest = {
 
 const COMPILERS_LIST_URL = 'https://solc-bin.ethereum.org/bin/list.json'
 
+const extractChainId = (tenderly: TenderlyConfiguration | Tenderly): number => {
+  if ('configuration' in tenderly) {
+    return tenderly.configuration.network
+  }
+  if ('network' in tenderly) {
+    return tenderly.network
+  }
+}
+
 export class ContractVerifier {
   private readonly tenderlyVerifier: TenderlyVerifier
   private readonly etherscanVerifier: EtherscanVerifier
@@ -58,13 +67,13 @@ export class ContractVerifier {
     tenderly: TenderlyConfiguration | Tenderly,
     etherscanApiKey: string,
     private readonly signer: Signer,
-    networkName = 'homestead',
     private readonly logger?: Logger,
   ) {
     this.tenderlyVerifier = new TenderlyVerifier(tenderly)
+    const chainId = extractChainId(tenderly)
     this.etherscanVerifier = new EtherscanVerifier(
       etherscanApiKey,
-      getEtherscanApiFromNetwork(networkName),
+      getEtherscanApiFromNetwork(chainId),
       logger,
     )
   }

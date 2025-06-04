@@ -64,7 +64,6 @@ describe('DeploymentFlow', () => {
       },
       'JKL',
       wallet,
-      'sepolia',
       console,
     )
 
